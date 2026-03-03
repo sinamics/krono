@@ -21,6 +21,8 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
       DESKTOP_PUBLISH_KEY: ${DESKTOP_PUBLISH_KEY}
+    volumes:
+      - uploads_data:/app/public/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -47,3 +49,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
