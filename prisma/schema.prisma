@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/db"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model user {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions     session[]
+  accounts     account[]
+  transactions transaction[]
+  suppliers    supplier[]
+  mvaTerms     mvaTerm[]
+  settings     businessSettings?
+}
+
+model session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+}
+
+model transaction {
+  id           String    @id @default(cuid())
+  userId       String
+  user         user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime
+  description  String
+  amount       Float
+  currency     String    @default("NOK")
+  exchangeRate Float     @default(1)
+  amountNOK    Float
+  type         String // SALE or EXPENSE
+  mvaCode      String // CODE_52, CODE_86, CODE_1, CODE_11, CODE_13, CODE_81
+  supplierId   String?
+  supplier     supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  category     String?
+  receiptUrl   String?
+  isRecurring  Boolean   @default(false)
+  recurringDay Int?
+  notes        String?
+  termPeriod   String // e.g. "2025-6" for Nov-Dec 2025
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model supplier {
+  id              String        @id @default(cuid())
+  userId          String
+  user            user          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  country         String        @default("Norge")
+  currency        String        @default("NOK")
+  type            String // NORWEGIAN or FOREIGN
+  defaultMvaCode  String? // CODE_1 or CODE_86
+  defaultCategory String?
+  orgNr           String?
+  transactions    transaction[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model mvaTerm {
+  id              String    @id @default(cuid())
+  userId          String
+  user            user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  year            Int
+  term            Int // 1-6 (1=Jan-Feb, 2=Mar-Apr, etc.)
+  kode52Grunnlag  Float     @default(0)
+  kode86Grunnlag  Float     @default(0)
+  kode86Mva       Float     @default(0)
+  kode86Fradrag   Float     @default(0)
+  kode1MvaFradrag Float     @default(0)
+  totalMva        Float     @default(0)
+  status          String    @default("DRAFT") // DRAFT or SUBMITTED
+  submittedAt     DateTime?
+  deadline        DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, year, term])
+}
+
+model businessSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgNr              String?
+  businessName       String?
+  address            String?
+  ekomPrivatePercent Float    @default(0)
+  defaultCurrency    String   @default("NOK")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
