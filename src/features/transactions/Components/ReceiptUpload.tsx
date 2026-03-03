@@ -1,18 +1,50 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, FileText, ImageIcon } from "lucide-react";
+import { Upload, X, FileText, ImageIcon, Loader2, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+export type ParsedReceipt = {
+  description?: string;
+  amount?: number;
+  currency?: "NOK" | "EUR" | "USD";
+  date?: string;
+  supplierName?: string;
+  category?: string;
+};
 
 type Props = {
   value?: string;
   onChange: (url: string | undefined) => void;
+  onParsed?: (data: ParsedReceipt) => void;
 };
 
-export function ReceiptUpload({ value, onChange }: Props) {
+export function ReceiptUpload({ value, onChange, onParsed }: Props) {
   const [uploading, setUploading] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [autoScan, setAutoScan] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const parseReceipt = async (imageUrl: string) => {
+    if (!onParsed) return;
+    setParsing(true);
+    try {
+      const res = await fetch("/api/parse-receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      });
+      if (res.ok) {
+        const parsed = await res.json();
+        onParsed(parsed);
+      }
+    } catch {
+      // Parsing is best-effort
+    } finally {
+      setParsing(false);
+    }
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,6 +70,10 @@ export function ReceiptUpload({ value, onChange }: Props) {
       }
 
       onChange(data.url);
+
+      if (autoScan) {
+        await parseReceipt(data.url);
+      }
     } catch {
       setError("Opplasting feilet");
     } finally {
@@ -79,6 +115,20 @@ export function ReceiptUpload({ value, onChange }: Props) {
             type="button"
             variant="ghost"
             size="icon"
+            onClick={() => parseReceipt(value)}
+            disabled={parsing}
+            title="Skann kvittering på nytt"
+          >
+            {parsing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ScanSearch className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={handleRemove}
           >
             <X className="h-4 w-4" />
@@ -98,13 +148,44 @@ export function ReceiptUpload({ value, onChange }: Props) {
             type="button"
             variant="outline"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || parsing}
             className="w-full"
           >
-            <Upload className="mr-2 h-4 w-4" />
-            {uploading ? "Laster opp..." : "Last opp kvittering"}
+            {parsing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyserer kvittering...
+              </>
+            ) : uploading ? (
+              <>
+                <Upload className="mr-2 h-4 w-4" />
+                Laster opp...
+              </>
+            ) : (
+              <>
+                <Upload className="mr-2 h-4 w-4" />
+                Last opp kvittering
+              </>
+            )}
           </Button>
         </div>
+      )}
+      {parsing && value && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Analyserer kvittering...
+        </div>
+      )}
+      {onParsed && (
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={autoScan}
+            onChange={(e) => setAutoScan(e.target.checked)}
+            className="h-4 w-4 rounded border"
+          />
+          Automatisk skanning ved opplasting
+        </label>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
