@@ -35,7 +35,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 # Install runtime dependencies (prisma CLI + serverExternalPackages)
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-RUN npm install @prisma/client@7 prisma@7 @prisma/adapter-pg@7 pg && \
+RUN npm install @prisma/client@7 prisma@7 && \
     chown -R nextjs:nodejs /app/node_modules
 
 RUN apk add --no-cache bash
