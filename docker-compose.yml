@@ -14,13 +14,10 @@ services:
     expose:
       - "3000"
     environment:
-      VIRTUAL_HOST: ${VIRTUAL_HOST}
-      VIRTUAL_PORT: "3000"
-      LETSENCRYPT_HOST: ${VIRTUAL_HOST}
       DATABASE_URL: ${DATABASE_URL}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-      DESKTOP_PUBLISH_KEY: ${DESKTOP_PUBLISH_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     volumes:
       - uploads_data:/app/public/uploads
     depends_on:

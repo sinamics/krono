@@ -24,15 +24,23 @@ import {
 
 export function ExpenseFields({
   form,
-  suppliers: initialSuppliers,
-}: FormProps & { suppliers: supplier[] }) {
-  const [suppliers, setSuppliers] = useState(initialSuppliers);
+  suppliers: externalSuppliers,
+  onSupplierCreated,
+}: FormProps & { suppliers: supplier[]; onSupplierCreated?: (s: supplier) => void }) {
+  const [localSuppliers, setLocalSuppliers] = useState<supplier[]>([]);
   const [showSupplierDialog, setShowSupplierDialog] = useState(false);
   const supplierId = form.watch("supplierId");
 
+  // Merge external list with any locally-created suppliers
+  const suppliers = [
+    ...externalSuppliers,
+    ...localSuppliers.filter((ls) => !externalSuppliers.some((es) => es.id === ls.id)),
+  ];
+
   const handleSupplierCreated = (newSupplier: supplier) => {
-    setSuppliers((prev) => [...prev, newSupplier]);
+    setLocalSuppliers((prev) => [...prev, newSupplier]);
     form.setValue("supplierId", newSupplier.id);
+    onSupplierCreated?.(newSupplier);
   };
 
   return (
