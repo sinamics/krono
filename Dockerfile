@@ -34,8 +34,9 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 --home /home/nextjs nextjs
 
 # Install runtime dependencies (prisma CLI + serverExternalPackages)
+# Must run before standalone copy to avoid conflicts with bundled node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-RUN npm install @prisma/client@7 prisma@7 && \
+RUN npm install @prisma/client@7 prisma@7 @prisma/adapter-pg@7 pg dotenv && \
     chown -R nextjs:nodejs /app/node_modules
 
 RUN apk add --no-cache bash
