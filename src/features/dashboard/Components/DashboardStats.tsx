@@ -1,31 +1,31 @@
 "use client";
 
-import type { DashboardStatsData } from "@/features/dashboard/Actions/getDashboardData";
+import type { YearToDateData } from "@/features/dashboard/Actions/getDashboardData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 
 type DashboardStatsProps = {
-  stats: DashboardStatsData;
+  yearToDate: YearToDateData;
 };
 
-export function DashboardStats({ stats }: DashboardStatsProps) {
+export function DashboardStats({ yearToDate }: DashboardStatsProps) {
   const items = [
     {
-      title: "Salg denne terminen",
-      value: formatCurrency(stats.salesTotal),
+      title: "Salg i år",
+      value: formatCurrency(yearToDate.totalSales),
     },
     {
-      title: "Utgifter denne terminen",
-      value: formatCurrency(stats.expensesTotal),
+      title: "Utgifter i år",
+      value: formatCurrency(yearToDate.totalExpenses),
     },
     {
-      title: "MVA-posisjon",
-      value: formatCurrency(stats.mvaPosition),
-      highlight: stats.mvaPosition < 0,
+      title: "Nettoresultat",
+      value: formatCurrency(yearToDate.netResult),
+      colorClass: yearToDate.netResult >= 0 ? "text-green-600" : "text-red-600",
     },
     {
-      title: "Neste frist",
-      value: formatDate(stats.nextDeadline),
+      title: "Transaksjoner",
+      value: yearToDate.transactionCount.toString(),
     },
   ];
 
@@ -41,9 +41,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
           <CardContent>
             <p
               className={`text-2xl font-bold ${
-                "highlight" in item && item.highlight
-                  ? "text-green-600"
-                  : ""
+                "colorClass" in item && item.colorClass ? item.colorClass : ""
               }`}
             >
               {item.value}

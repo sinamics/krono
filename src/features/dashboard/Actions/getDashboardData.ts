@@ -8,52 +8,102 @@ import {
   formatTermLabel,
 } from "@/lib/format";
 
-export type DashboardStatsData = {
+export type TermData = {
+  term: number;
+  label: string;
+  status: "SUBMITTED" | "DRAFT" | "OVERDUE";
+  deadline: string;
+  totalMva: number;
   salesTotal: number;
   expensesTotal: number;
-  mvaPosition: number;
-  nextDeadline: string;
-  currentTermLabel: string;
-  termStatus: string;
+};
+
+export type YearToDateData = {
+  totalSales: number;
+  totalExpenses: number;
+  netResult: number;
+  transactionCount: number;
+};
+
+export type DashboardData = {
+  allTerms: TermData[];
+  yearToDate: YearToDateData;
+  recentTransactions: Awaited<ReturnType<typeof db.transaction.findMany>>;
 };
 
 export const getDashboardData = withAuth(async (auth) => {
   const now = new Date();
   const year = now.getFullYear();
-  const term = getTermFromDate(now);
-  const termPeriod = `${year}-${term}`;
+  const currentTerm = getTermFromDate(now);
 
-  const transactions = await db.transaction.findMany({
-    where: { userId: auth.userId, termPeriod },
+  // Fetch all transactions for the current year
+  const allTransactions = await db.transaction.findMany({
+    where: {
+      userId: auth.userId,
+      termPeriod: { startsWith: `${year}-` },
+    },
     orderBy: { date: "desc" },
   });
 
-  let salesTotal = 0;
-  let expensesTotal = 0;
-
-  for (const tx of transactions) {
-    if (tx.type === "SALE") salesTotal += tx.amountNOK;
-    else expensesTotal += tx.amountNOK;
-  }
-
-  const mvaTerm = await db.mvaTerm.findUnique({
-    where: {
-      userId_year_term: { userId: auth.userId, year, term },
-    },
+  // Fetch all MVA terms for the current year
+  const mvaTerms = await db.mvaTerm.findMany({
+    where: { userId: auth.userId, year },
   });
 
-  const deadline = getTermDeadline(year, term);
+  const mvaTermMap = new Map(mvaTerms.map((t) => [t.term, t]));
 
-  const stats: DashboardStatsData = {
-    salesTotal,
-    expensesTotal,
-    mvaPosition: mvaTerm?.totalMva ?? 0,
-    nextDeadline: deadline.toISOString(),
-    currentTermLabel: `Termin ${term} (${formatTermLabel(term)})`,
-    termStatus: mvaTerm?.status ?? "DRAFT",
+  // Build per-term data
+  const allTerms: TermData[] = [];
+  for (let term = 1; term <= 6; term++) {
+    const termPeriod = `${year}-${term}`;
+    const termTxs = allTransactions.filter((tx) => tx.termPeriod === termPeriod);
+
+    let salesTotal = 0;
+    let expensesTotal = 0;
+    for (const tx of termTxs) {
+      if (tx.type === "SALE") salesTotal += tx.amountNOK;
+      else expensesTotal += tx.amountNOK;
+    }
+
+    const mvaTerm = mvaTermMap.get(term);
+    const deadline = getTermDeadline(year, term);
+    const isPast = deadline < now;
+    const isSubmitted = mvaTerm?.status === "SUBMITTED";
+
+    let status: TermData["status"] = "DRAFT";
+    if (isSubmitted) {
+      status = "SUBMITTED";
+    } else if (isPast && term < currentTerm) {
+      status = "OVERDUE";
+    }
+
+    allTerms.push({
+      term,
+      label: formatTermLabel(term),
+      status,
+      deadline: deadline.toISOString(),
+      totalMva: mvaTerm?.totalMva ?? 0,
+      salesTotal,
+      expensesTotal,
+    });
+  }
+
+  // Year-to-date totals
+  let totalSales = 0;
+  let totalExpenses = 0;
+  for (const tx of allTransactions) {
+    if (tx.type === "SALE") totalSales += tx.amountNOK;
+    else totalExpenses += tx.amountNOK;
+  }
+
+  const yearToDate: YearToDateData = {
+    totalSales,
+    totalExpenses,
+    netResult: totalSales - totalExpenses,
+    transactionCount: allTransactions.length,
   };
 
-  const recentTransactions = transactions.slice(0, 5);
+  const recentTransactions = allTransactions.slice(0, 5);
 
-  return { stats, recentTransactions };
+  return { allTerms, yearToDate, recentTransactions } as DashboardData;
 });
