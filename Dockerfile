@@ -42,6 +42,7 @@ RUN apk add --no-cache bash
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/init-db.sh ./init-db.sh
 
 # Automatically leverage output traces to reduce image size
