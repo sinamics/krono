@@ -1,9 +1,13 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Hero } from "@/features/landing/Components/Hero";
 import { Features } from "@/features/landing/Components/Features";
+import { getSession } from "@/lib/withAuth";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const session = await getSession();
+  if (session) redirect("/dashboard");
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
