@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { DashboardData } from "@/features/dashboard/Actions/getDashboardData";
 import { DashboardStats } from "./DashboardStats";
+import { MonthlyChart } from "./MonthlyChart";
 import { MvaTermsOverview } from "./MvaTermsOverview";
 import { RecentTransactions } from "./RecentTransactions";
 import {
@@ -51,6 +52,8 @@ export function DashboardShell({ data, year }: DashboardShellProps) {
       </div>
 
       <DashboardStats yearToDate={data.yearToDate} />
+
+      <MonthlyChart data={data.monthly} year={year} />
 
       <MvaTermsOverview
         terms={data.allTerms}

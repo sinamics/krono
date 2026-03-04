@@ -21,7 +21,7 @@ export default async function ReportsPage({ searchParams }: Props) {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Rapporter</h1>
       <ReportOverview reportData={reportData} year={year} />
-      <EkomAdjustmentCalculator />
+      <EkomAdjustmentCalculator totalEkomCost={reportData.totalEkomCost} year={year} />
     </div>
   );
 }

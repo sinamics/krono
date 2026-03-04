@@ -25,11 +25,18 @@ export type YearToDateData = {
   transactionCount: number;
 };
 
+export type MonthlyData = {
+  month: string;
+  sales: number;
+  expenses: number;
+};
+
 export type DashboardData = {
   allTerms: TermData[];
   yearToDate: YearToDateData;
   currentTerm: number;
   recentTransactions: Awaited<ReturnType<typeof db.transaction.findMany>>;
+  monthly: MonthlyData[];
 };
 
 export const getDashboardData = withAuth(async (auth, year: number) => {
@@ -106,10 +113,27 @@ export const getDashboardData = withAuth(async (auth, year: number) => {
 
   const recentTransactions = allTransactions.slice(0, 5);
 
+  // Monthly breakdown
+  const monthLabels = [
+    "Jan", "Feb", "Mar", "Apr", "Mai", "Jun",
+    "Jul", "Aug", "Sep", "Okt", "Nov", "Des",
+  ];
+  const monthly: MonthlyData[] = monthLabels.map((month) => ({
+    month,
+    sales: 0,
+    expenses: 0,
+  }));
+  for (const tx of allTransactions) {
+    const m = new Date(tx.date).getMonth();
+    if (tx.type === "SALE") monthly[m].sales += tx.amountNOK;
+    else monthly[m].expenses += tx.amountNOK;
+  }
+
   return {
     allTerms,
     yearToDate,
     currentTerm,
     recentTransactions,
+    monthly,
   } as DashboardData;
 });

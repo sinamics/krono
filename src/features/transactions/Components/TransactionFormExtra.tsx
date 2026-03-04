@@ -6,6 +6,7 @@ import type { FormProps } from "./TransactionFormFields";
 import { InlineSupplierDialog } from "./InlineSupplierDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
 import { Plus } from "lucide-react";
 import {
   Select,
@@ -131,9 +132,30 @@ export function OptionalFields({ form }: FormProps) {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Kategori (valgfritt)</FormLabel>
-            <FormControl>
-              <Input placeholder="f.eks. Kontor, Reise" {...field} />
-            </FormControl>
+            <Select
+              value={field.value || "NONE"}
+              onValueChange={(v) => field.onChange(v === "NONE" ? "" : v)}
+            >
+              <FormControl>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Velg kategori" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="NONE">Ingen kategori</SelectItem>
+                <SelectItem value="Internet">Internet</SelectItem>
+                <SelectItem value="Telefon">Telefon</SelectItem>
+                <SelectItem value="Kontor">Kontor</SelectItem>
+                <SelectItem value="Reise">Reise</SelectItem>
+                <SelectItem value="Mat">Mat</SelectItem>
+                <SelectItem value="Programvare">Programvare</SelectItem>
+                <SelectItem value="Utstyr">Utstyr</SelectItem>
+                <SelectItem value="Forsikring">Forsikring</SelectItem>
+                <SelectItem value="Regnskap">Regnskap</SelectItem>
+                <SelectItem value="Markedsføring">Markedsføring</SelectItem>
+                <SelectItem value="Annet">Annet</SelectItem>
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}

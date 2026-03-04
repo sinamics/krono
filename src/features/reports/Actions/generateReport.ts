@@ -32,6 +32,7 @@ export type ReportData = {
   monthly: MonthlyRow[];
   terms: TermRow[];
   annual: AnnualSummary;
+  totalEkomCost: number;
 };
 
 const MONTH_LABELS = [
@@ -113,6 +114,19 @@ export async function generateReport(
 
   const totalMvaReturned = mvaTerms.reduce((sum, t) => sum + t.totalMva, 0);
 
+  // EKOM costs — sum transactions with EKOM-related categories
+  const ekomCategories = ["ekom", "internet", "internett", "telefon", "mobil", "bredbånd", "bredband"];
+  let totalEkomCost = 0;
+  for (const tx of transactions) {
+    if (
+      tx.type === "EXPENSE" &&
+      tx.category &&
+      ekomCategories.includes(tx.category.toLowerCase())
+    ) {
+      totalEkomCost += tx.amountNOK;
+    }
+  }
+
   return {
     monthly,
     terms,
@@ -122,5 +136,6 @@ export async function generateReport(
       totalNorwegianPurchases,
       totalMvaReturned,
     },
+    totalEkomCost,
   };
 }
