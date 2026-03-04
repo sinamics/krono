@@ -5,6 +5,7 @@ import { withAuth } from "@/lib/withAuth";
 import { syncParamsSchema } from "../Schema/integrationSchema";
 import { getTermPeriod, calculateAmountNOK } from "@/lib/tax-calculations";
 import { getExchangeRate } from "@/features/transactions/Actions/getExchangeRate";
+import { getNextBilagsnummer } from "@/lib/bilagsnummer";
 
 async function getPaypalAccessToken(clientId: string, secret: string): Promise<string> {
   const res = await fetch("https://api-m.paypal.com/v1/oauth2/token", {
@@ -221,6 +222,7 @@ export const syncPaypalTransactions = withAuth(
         const operations = [];
 
         if (!existingIds.has(saleId)) {
+          const bilagsnummer = await getNextBilagsnummer(auth.userId);
           operations.push(
             db.transaction.create({
               data: {
@@ -235,12 +237,14 @@ export const syncPaypalTransactions = withAuth(
                 mvaCode: "CODE_52",
                 termPeriod,
                 externalId: saleId,
+                bilagsnummer,
               },
             })
           );
         }
 
         if (!existingIds.has(feeId) && feeValue > 0) {
+          const bilagsnummer = await getNextBilagsnummer(auth.userId);
           operations.push(
             db.transaction.create({
               data: {
@@ -256,6 +260,7 @@ export const syncPaypalTransactions = withAuth(
                 supplierId: paypalSupplier.id,
                 termPeriod,
                 externalId: feeId,
+                bilagsnummer,
               },
             })
           );

@@ -16,6 +16,7 @@ export const supplierSchema = z.object({
       (val) => !val || /^\d{9}$/.test(val),
       "Org.nr må være 9 siffer"
     ),
+  vatId: z.string().optional(),
 });
 
 export type SupplierFormData = z.infer<typeof supplierSchema>;

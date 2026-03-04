@@ -26,6 +26,7 @@ export const updateSupplier = withAuth(
         defaultMvaCode,
         defaultCategory: data.defaultCategory,
         orgNr: data.orgNr,
+        vatId: data.vatId,
       },
     });
 

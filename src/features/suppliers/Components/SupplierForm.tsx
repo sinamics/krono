@@ -40,6 +40,7 @@ export function SupplierForm({ supplier, onSuccess }: Props) {
       type: (supplier?.type as "NORWEGIAN" | "FOREIGN") ?? "NORWEGIAN",
       defaultCategory: supplier?.defaultCategory ?? "",
       orgNr: supplier?.orgNr ?? "",
+      vatId: supplier?.vatId ?? "",
     },
   });
 
@@ -141,7 +142,7 @@ export function SupplierForm({ supplier, onSuccess }: Props) {
               )}
             />
           </div>
-          {isNorwegian && (
+          {isNorwegian ? (
             <FormField
               control={form.control}
               name="orgNr"
@@ -150,6 +151,20 @@ export function SupplierForm({ supplier, onSuccess }: Props) {
                   <FormLabel>Org.nr</FormLabel>
                   <FormControl>
                     <Input placeholder="123456789" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ) : (
+            <FormField
+              control={form.control}
+              name="vatId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>EU VAT-ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="IE1234567X" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

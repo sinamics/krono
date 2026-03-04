@@ -16,7 +16,7 @@ export const calculateTerm = withAuth(
     const termPeriod = `${year}-${term}`;
 
     const transactions = await db.transaction.findMany({
-      where: { userId: auth.userId, termPeriod },
+      where: { userId: auth.userId, termPeriod, deletedAt: null },
     });
 
     const {

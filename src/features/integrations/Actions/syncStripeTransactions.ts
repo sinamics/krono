@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { withAuth } from "@/lib/withAuth";
 import { getTermPeriod } from "@/lib/format";
 import { syncParamsSchema } from "../Schema/integrationSchema";
+import { getNextBilagsnummer } from "@/lib/bilagsnummer";
 
 export const syncStripeTransactions = withAuth(
   async (auth, formData: unknown) => {
@@ -120,6 +121,7 @@ export const syncStripeTransactions = withAuth(
         const operations = [];
 
         if (!existingIds.has(saleId)) {
+          const bilagsnummer = await getNextBilagsnummer(auth.userId);
           operations.push(
             db.transaction.create({
               data: {
@@ -134,12 +136,14 @@ export const syncStripeTransactions = withAuth(
                 mvaCode: "CODE_52",
                 termPeriod,
                 externalId: saleId,
+                bilagsnummer,
               },
             })
           );
         }
 
         if (!existingIds.has(feeId) && feeAmount > 0) {
+          const bilagsnummer = await getNextBilagsnummer(auth.userId);
           operations.push(
             db.transaction.create({
               data: {
@@ -155,6 +159,7 @@ export const syncStripeTransactions = withAuth(
                 supplierId: stripeSupplier.id,
                 termPeriod,
                 externalId: feeId,
+                bilagsnummer,
               },
             })
           );

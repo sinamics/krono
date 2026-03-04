@@ -10,6 +10,7 @@ export const fixExchangeRates = withAuth(async (auth) => {
       userId: auth.userId,
       currency: { not: "NOK" },
       exchangeRate: 1,
+      deletedAt: null,
     },
   });
 

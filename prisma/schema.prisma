@@ -64,30 +64,34 @@ model verification {
 }
 
 model transaction {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   userId       String
-  user         user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         user       @relation(fields: [userId], references: [id], onDelete: Cascade)
   date         DateTime
   description  String
   amount       Float
-  currency     String    @default("NOK")
-  exchangeRate Float     @default(1)
+  currency     String     @default("NOK")
+  exchangeRate Float      @default(1)
   amountNOK    Float
   type         String // SALE or EXPENSE
   mvaCode      String // CODE_52, CODE_86, CODE_1, CODE_11, CODE_13, CODE_81
   supplierId   String?
-  supplier     supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplier     supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   category     String?
   receiptUrl   String?
-  isRecurring  Boolean   @default(false)
+  isRecurring  Boolean    @default(false)
   recurringDay Int?
   notes        String?
   termPeriod   String // e.g. "2025-6" for Nov-Dec 2025
   externalId   String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  bilagsnummer Int?
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    auditLog[]
 
   @@unique([userId, externalId])
+  @@unique([userId, bilagsnummer])
 }
 
 model supplier {
@@ -101,9 +105,23 @@ model supplier {
   defaultMvaCode  String? // CODE_1 or CODE_86
   defaultCategory String?
   orgNr           String?
+  vatId           String?
   transactions    transaction[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+model auditLog {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  userId        String
+  action        String // CREATE, UPDATE, DELETE, RESTORE
+  changes       String // JSON of { field: { from, to } }
+  createdAt     DateTime    @default(now())
+
+  @@index([transactionId])
+  @@index([userId])
 }
 
 model mvaTerm {

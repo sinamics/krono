@@ -42,6 +42,7 @@ import { Badge } from "@/components/ui/badge";
 import { deleteTransaction } from "../Actions/deleteTransaction";
 import { deleteTransactions } from "../Actions/deleteTransactions";
 import { TransactionPagination } from "./TransactionPagination";
+import { AuditLog } from "./AuditLog";
 
 type Props = {
   transactions: TransactionWithSupplier[];
@@ -102,6 +103,15 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
               onChange={row.getToggleSelectedHandler()}
             />
           </div>
+        ),
+      },
+      {
+        accessorKey: "bilagsnummer",
+        header: "Bilag",
+        cell: ({ row }) => (
+          <span className="font-mono text-muted-foreground">
+            {row.original.bilagsnummer ?? "—"}
+          </span>
         ),
       },
       {
@@ -277,6 +287,12 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
                 </div>
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4 text-sm">
+                {selectedTx.bilagsnummer && (
+                  <div>
+                    <p className="text-muted-foreground">Bilagsnummer</p>
+                    <p className="font-medium font-mono">{selectedTx.bilagsnummer}</p>
+                  </div>
+                )}
                 <div>
                   <p className="text-muted-foreground">Beløp (NOK)</p>
                   <p className="font-medium">{formatCurrency(selectedTx.amountNOK)}</p>
@@ -305,6 +321,12 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
                   <p className="text-muted-foreground">Leverandør</p>
                   <p className="font-medium">{selectedTx.supplier?.name ?? "-"}</p>
                 </div>
+                {selectedTx.supplier?.vatId && (
+                  <div>
+                    <p className="text-muted-foreground">VAT-ID</p>
+                    <p className="font-medium">{selectedTx.supplier.vatId}</p>
+                  </div>
+                )}
                 {selectedTx.category && (
                   <div>
                     <p className="text-muted-foreground">Kategori</p>
@@ -331,6 +353,10 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
                   </div>
                 )}
               </div>
+              <div className="border-t pt-3 mt-3">
+                <p className="text-sm font-medium mb-2">Endringslogg</p>
+                <AuditLog transactionId={selectedTx.id} />
+              </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/transactions/${selectedTx.id}`}>
@@ -349,8 +375,8 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
           <AlertDialogHeader>
             <AlertDialogTitle>Slett transaksjon</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette denne transaksjonen? Denne
-              handlingen kan ikke angres.
+              Transaksjonen flyttes til papirkurven. Du kan gjenopprette den
+              senere.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -371,7 +397,7 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
           <AlertDialogHeader>
             <AlertDialogTitle>Slett {selectedCount} transaksjon{selectedCount > 1 ? "er" : ""}</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på at du vil slette {selectedCount} valgte transaksjon{selectedCount > 1 ? "er" : ""}? Denne handlingen kan ikke angres.
+              {selectedCount} valgte transaksjon{selectedCount > 1 ? "er" : ""} flyttes til papirkurven. Du kan gjenopprette dem senere.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
