@@ -2,24 +2,13 @@
 
 import { db } from "@/lib/db";
 import { withAuth } from "@/lib/withAuth";
-import { getTermPeriod } from "@/lib/format";
 import { transactionSchema } from "../Schema/transactionSchema";
-
-function determineMvaCode(
-  type: string,
-  supplierType?: string,
-  supplierDefaultMvaCode?: string | null
-): string {
-  if (type === "SALE") return "CODE_52";
-  if (supplierDefaultMvaCode) return supplierDefaultMvaCode;
-  if (supplierType === "FOREIGN") return "CODE_86";
-  return "CODE_1";
-}
+import { determineMvaCode, getTermPeriod, calculateAmountNOK } from "@/lib/tax-calculations";
 
 export const createTransaction = withAuth(
   async (auth, formData: unknown) => {
     const data = transactionSchema.parse(formData);
-    const amountNOK = data.amount * data.exchangeRate;
+    const amountNOK = calculateAmountNOK(data.amount, data.exchangeRate);
     const termPeriod = getTermPeriod(data.date);
 
     let supplierType = data.supplierType;

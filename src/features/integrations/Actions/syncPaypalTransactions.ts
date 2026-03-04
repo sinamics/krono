@@ -2,8 +2,9 @@
 
 import { db } from "@/lib/db";
 import { withAuth } from "@/lib/withAuth";
-import { getTermPeriod } from "@/lib/format";
 import { syncParamsSchema } from "../Schema/integrationSchema";
+import { getTermPeriod, calculateAmountNOK } from "@/lib/tax-calculations";
+import { getExchangeRate } from "@/features/transactions/Actions/getExchangeRate";
 
 async function getPaypalAccessToken(clientId: string, secret: string): Promise<string> {
   const res = await fetch("https://api-m.paypal.com/v1/oauth2/token", {
@@ -205,6 +206,17 @@ export const syncPaypalTransactions = withAuth(
         const feeValue = info.fee_amount
           ? Math.abs(parseFloat(info.fee_amount.value))
           : 0;
+        const feeCurrency = info.fee_amount?.currency_code ?? currency;
+
+        // Fetch exchange rate for non-NOK currencies
+        const exchangeRate = currency === "NOK"
+          ? 1
+          : (await getExchangeRate(currency, txDate)) ?? 1;
+        const feeExchangeRate = feeCurrency === "NOK"
+          ? 1
+          : feeCurrency === currency
+            ? exchangeRate
+            : (await getExchangeRate(feeCurrency, txDate)) ?? 1;
 
         const operations = [];
 
@@ -217,8 +229,8 @@ export const syncPaypalTransactions = withAuth(
                 description,
                 amount,
                 currency,
-                exchangeRate: 1,
-                amountNOK: amount,
+                exchangeRate,
+                amountNOK: calculateAmountNOK(amount, exchangeRate),
                 type: "SALE",
                 mvaCode: "CODE_52",
                 termPeriod,
@@ -236,9 +248,9 @@ export const syncPaypalTransactions = withAuth(
                 date: txDate,
                 description: `PayPal-gebyr: ${description}`,
                 amount: feeValue,
-                currency: info.fee_amount?.currency_code ?? currency,
-                exchangeRate: 1,
-                amountNOK: feeValue,
+                currency: feeCurrency,
+                exchangeRate: feeExchangeRate,
+                amountNOK: calculateAmountNOK(feeValue, feeExchangeRate),
                 type: "EXPENSE",
                 mvaCode: "CODE_86",
                 supplierId: paypalSupplier.id,
