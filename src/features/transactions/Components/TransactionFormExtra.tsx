@@ -143,8 +143,10 @@ export function OptionalFields({ form }: FormProps) {
               </FormControl>
               <SelectContent>
                 <SelectItem value="NONE">Ingen kategori</SelectItem>
-                <SelectItem value="Internet">Internet</SelectItem>
-                <SelectItem value="Telefon">Telefon</SelectItem>
+                <SelectItem value="Internet">Internet (EKOM)</SelectItem>
+                <SelectItem value="Telefon">Telefon (EKOM)</SelectItem>
+                <SelectItem value="Hosting">Hosting/Server</SelectItem>
+                <SelectItem value="Abonnement">Abonnement/SaaS</SelectItem>
                 <SelectItem value="Kontor">Kontor</SelectItem>
                 <SelectItem value="Reise">Reise</SelectItem>
                 <SelectItem value="Mat">Mat</SelectItem>

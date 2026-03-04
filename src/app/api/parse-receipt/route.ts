@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   "currency": "NOK eller EUR eller USD",
   "date": "YYYY-MM-DD",
   "supplierName": "leverandørens navn",
-  "category": "en av: Internet, Telefon, Kontor, Reise, Mat, Programvare, Utstyr, Forsikring, Regnskap, Markedsføring, Annet",
+  "category": "en av: Internet, Telefon, Hosting, Abonnement, Kontor, Reise, Mat, Programvare, Utstyr, Forsikring, Regnskap, Markedsføring, Annet",
   "reference": "referansenummer, fakturanummer, ordrenummer eller KID-nummer hvis det finnes"
 }
 
@@ -90,6 +90,7 @@ Regler:
 - currency skal være en av: NOK, EUR, USD. Bruk NOK som standard hvis ukjent.
 - date skal være i ISO-format (YYYY-MM-DD)
 - reference skal inneholde referanse-/faktura-/ordre-/KID-nummer hvis det finnes i dokumentet, ellers null
+- Kategori-regler: "Internet" og "Telefon" er KUN for EKOM-tjenester (bredbånd, mobilabonnement, internettilgang). Bruk "Hosting" for VPS, skyservere, webhotell, domener og lignende infrastruktur (f.eks. Hetzner, AWS, DigitalOcean, Cloudflare). Bruk "Abonnement" for SaaS-tjenester og andre digitale abonnementer. Bruk "Programvare" for engangskjøp av programvare/lisenser.
 - Svar KUN med JSON-objektet, ingen annen tekst.`,
             },
           ],
