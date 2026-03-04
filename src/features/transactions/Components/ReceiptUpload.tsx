@@ -11,6 +11,7 @@ export type ParsedReceipt = {
   date?: string;
   supplierName?: string;
   category?: string;
+  reference?: string;
 };
 
 type Props = {

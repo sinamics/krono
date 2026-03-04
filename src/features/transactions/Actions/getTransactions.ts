@@ -46,7 +46,27 @@ export async function getTransactions(filters: TransactionFilters): Promise<Pagi
   }
 
   if (filters.search) {
-    where.description = { contains: filters.search };
+    const term = filters.search;
+    const numericValue = parseFloat(term);
+    const searchConditions: Prisma.transactionWhereInput[] = [
+      { description: { contains: term, mode: "insensitive" } },
+      { supplier: { name: { contains: term, mode: "insensitive" } } },
+      { category: { contains: term, mode: "insensitive" } },
+      { notes: { contains: term, mode: "insensitive" } },
+    ];
+
+    if (!isNaN(numericValue)) {
+      searchConditions.push({ amount: numericValue });
+      searchConditions.push({ amountNOK: numericValue });
+    }
+
+    if (where.OR) {
+      // source filter already uses OR, wrap both in AND
+      where.AND = [{ OR: where.OR }, { OR: searchConditions }];
+      delete where.OR;
+    } else {
+      where.OR = searchConditions;
+    }
   }
 
   if (filters.source === "manual") {
