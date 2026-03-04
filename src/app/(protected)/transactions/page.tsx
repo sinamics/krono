@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { getSession } from "@/lib/withAuth";
 import { db } from "@/lib/db";
 import { getTransactions } from "@/features/transactions/Actions/getTransactions";
 import { TransactionFilters } from "@/features/transactions/Components/TransactionFilters";
 import { TransactionList } from "@/features/transactions/Components/TransactionList";
 import { NewTransactionDialog } from "@/features/transactions/Components/NewTransactionDialog";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   searchParams: Promise<{
@@ -48,7 +51,15 @@ export default async function TransactionsPage({ searchParams }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Transaksjoner</h1>
-        <NewTransactionDialog suppliers={suppliers} />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/transactions/trash">
+              <Trash2 className="mr-1 h-4 w-4" />
+              Papirkurv
+            </Link>
+          </Button>
+          <NewTransactionDialog suppliers={suppliers} />
+        </div>
       </div>
       <TransactionFilters />
       <TransactionList

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { withAuth } from "@/lib/withAuth";
 import { transactionSchema } from "../Schema/transactionSchema";
 import { determineMvaCode, getTermPeriod, calculateAmountNOK } from "@/lib/tax-calculations";
+import { logAudit, diffTransaction, AUDITED_FIELDS } from "@/lib/audit";
 
 export const updateTransaction = withAuth(
   async (auth, id: string, formData: unknown) => {
@@ -55,6 +56,21 @@ export const updateTransaction = withAuth(
         termPeriod,
       },
     });
+
+    const changes = diffTransaction(
+      existing as unknown as Record<string, unknown>,
+      transaction as unknown as Record<string, unknown>,
+      AUDITED_FIELDS
+    );
+
+    if (Object.keys(changes).length > 0) {
+      await logAudit({
+        transactionId: id,
+        userId: auth.userId,
+        action: "UPDATE",
+        changes,
+      });
+    }
 
     return transaction;
   }

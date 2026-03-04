@@ -15,6 +15,7 @@ export const exportReport = withAuth(
         gte: new Date(input.year, 0, 1),
         lt: new Date(input.year + 1, 0, 1),
       },
+      deletedAt: null,
     };
 
     if (input.termPeriod) {
@@ -28,6 +29,7 @@ export const exportReport = withAuth(
     });
 
     const header = [
+      "Bilagsnr",
       "Dato",
       "Beskrivelse",
       "Type",
@@ -36,12 +38,14 @@ export const exportReport = withAuth(
       "Originalt beløp",
       "MVA-kode",
       "Leverandør",
+      "VAT-ID",
       "Kategori",
       "Termin",
     ].join(";");
 
     const rows = transactions.map((tx) =>
       [
+        tx.bilagsnummer ?? "",
         formatDate(tx.date),
         `"${tx.description.replace(/"/g, '""')}"`,
         tx.type === "SALE" ? "Salg" : "Utgift",
@@ -50,6 +54,7 @@ export const exportReport = withAuth(
         tx.amount.toFixed(2),
         getMvaCodeLabel(tx.mvaCode),
         tx.supplier?.name ?? "",
+        tx.supplier?.vatId ?? "",
         tx.category ?? "",
         tx.termPeriod,
       ].join(";")

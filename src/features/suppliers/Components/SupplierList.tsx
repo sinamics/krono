@@ -79,6 +79,7 @@ export function SupplierList({ suppliers }: Props) {
               <TableHead>Type</TableHead>
               <TableHead>Valuta</TableHead>
               <TableHead>Org.nr</TableHead>
+              <TableHead>VAT-ID</TableHead>
               <TableHead>Transaksjoner</TableHead>
               <TableHead className="text-right">Handlinger</TableHead>
             </TableRow>
@@ -99,6 +100,7 @@ export function SupplierList({ suppliers }: Props) {
                 </TableCell>
                 <TableCell>{s.currency}</TableCell>
                 <TableCell>{s.orgNr ?? "—"}</TableCell>
+                <TableCell>{s.vatId ?? "—"}</TableCell>
                 <TableCell>{s._count.transactions}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">

@@ -49,6 +49,7 @@ export const getDashboardData = withAuth(async (auth, year: number) => {
     where: {
       userId: auth.userId,
       termPeriod: { startsWith: `${year}-` },
+      deletedAt: null,
     },
     orderBy: { date: "desc" },
   });

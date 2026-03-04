@@ -19,6 +19,7 @@ export const checkDuplicate = withAuth(
         userId: auth.userId,
         date: { gte: startOfDay, lte: endOfDay },
         amount: params.amount,
+        deletedAt: null,
         ...(params.supplierId ? { supplierId: params.supplierId } : {}),
       },
       select: { id: true, description: true },

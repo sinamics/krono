@@ -52,6 +52,7 @@ export async function generateReport(
           gte: new Date(year, 0, 1),
           lt: new Date(year + 1, 0, 1),
         },
+        deletedAt: null,
       },
     }),
     db.mvaTerm.findMany({

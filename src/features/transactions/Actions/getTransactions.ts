@@ -27,7 +27,7 @@ type TransactionFilters = {
 export async function getTransactions(filters: TransactionFilters): Promise<PaginatedTransactions> {
   const page = filters.page ?? 1;
   const pageSize = filters.pageSize ?? 20;
-  const where: Prisma.transactionWhereInput = { userId: filters.userId };
+  const where: Prisma.transactionWhereInput = { userId: filters.userId, deletedAt: null };
 
   if (filters.termPeriod) {
     where.termPeriod = filters.termPeriod;
@@ -103,7 +103,7 @@ export async function getTransactionById(id: string, userId: string) {
     include: { supplier: true },
   });
 
-  if (!transaction || transaction.userId !== userId) {
+  if (!transaction || transaction.userId !== userId || transaction.deletedAt) {
     return null;
   }
 

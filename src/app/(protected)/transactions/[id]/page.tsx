@@ -20,6 +20,7 @@ import {
   formatDate,
   getMvaCodeLabel,
 } from "@/lib/format";
+import { AuditLog } from "@/features/transactions/Components/AuditLog";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -66,6 +67,12 @@ export default async function EditTransactionPage({ params }: Props) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+            {transaction.bilagsnummer && (
+              <div>
+                <p className="text-muted-foreground">Bilagsnummer</p>
+                <p className="font-medium font-mono">{transaction.bilagsnummer}</p>
+              </div>
+            )}
             <div>
               <p className="text-muted-foreground">Beløp</p>
               <p className="font-medium">{formatCurrency(transaction.amountNOK)}</p>
@@ -84,6 +91,12 @@ export default async function EditTransactionPage({ params }: Props) {
                 {transaction.supplier?.name ?? "-"}
               </p>
             </div>
+            {transaction.supplier?.vatId && (
+              <div>
+                <p className="text-muted-foreground">VAT-ID</p>
+                <p className="font-medium">{transaction.supplier.vatId}</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -98,6 +111,18 @@ export default async function EditTransactionPage({ params }: Props) {
         <Separator />
         <CardContent className="pt-6">
           <TransactionForm suppliers={suppliers} transaction={transaction} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Endringslogg</CardTitle>
+          <CardDescription>
+            Historikk over endringer på denne transaksjonen.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AuditLog transactionId={transaction.id} />
         </CardContent>
       </Card>
     </div>

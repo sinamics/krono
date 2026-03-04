@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { withAuth } from "@/lib/withAuth";
 import { transactionSchema } from "../Schema/transactionSchema";
 import { determineMvaCode, getTermPeriod, calculateAmountNOK } from "@/lib/tax-calculations";
+import { getNextBilagsnummer } from "@/lib/bilagsnummer";
+import { logAudit } from "@/lib/audit";
 
 export const createTransaction = withAuth(
   async (auth, formData: unknown) => {
@@ -30,6 +32,8 @@ export const createTransaction = withAuth(
       supplierDefaultMvaCode
     );
 
+    const bilagsnummer = await getNextBilagsnummer(auth.userId);
+
     const transaction = await db.transaction.create({
       data: {
         userId: auth.userId,
@@ -48,7 +52,15 @@ export const createTransaction = withAuth(
         notes: data.notes || undefined,
         receiptUrl: data.receiptUrl || undefined,
         termPeriod,
+        bilagsnummer,
       },
+    });
+
+    await logAudit({
+      transactionId: transaction.id,
+      userId: auth.userId,
+      action: "CREATE",
+      changes: {},
     });
 
     return transaction;

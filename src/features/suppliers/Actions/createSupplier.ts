@@ -20,6 +20,7 @@ export const createSupplier = withAuth(
         defaultMvaCode,
         defaultCategory: data.defaultCategory,
         orgNr: data.orgNr,
+        vatId: data.vatId,
       },
     });
 
