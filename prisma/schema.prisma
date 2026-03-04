@@ -22,6 +22,7 @@ model user {
   suppliers    supplier[]
   mvaTerms     mvaTerm[]
   settings     businessSettings?
+  integrations integration[]
 }
 
 model session {
@@ -82,8 +83,11 @@ model transaction {
   recurringDay Int?
   notes        String?
   termPeriod   String // e.g. "2025-6" for Nov-Dec 2025
+  externalId   String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, externalId])
 }
 
 model supplier {
@@ -121,6 +125,20 @@ model mvaTerm {
   updatedAt       DateTime  @updatedAt
 
   @@unique([userId, year, term])
+}
+
+model integration {
+  id         String    @id @default(cuid())
+  userId     String
+  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   String // "stripe"
+  apiKey     String
+  isActive   Boolean   @default(true)
+  lastSyncAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([userId, provider])
 }
 
 model businessSettings {

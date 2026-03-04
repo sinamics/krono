@@ -13,6 +13,7 @@ type Props = {
     type?: string;
     mvaCode?: string;
     search?: string;
+    source?: string;
   }>;
 };
 
@@ -31,6 +32,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
     type: params.type,
     mvaCode: params.mvaCode,
     search: params.search,
+    source: params.source,
     year: termPeriod ? undefined : year,
   });
 

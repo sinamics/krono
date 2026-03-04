@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/withAuth";
-import { getTermFromDate } from "@/lib/format";
 import { db } from "@/lib/db";
 import { calculateTerm } from "@/features/mva/Actions/calculateTerm";
 import { TermSelector } from "@/features/mva/Components/TermSelector";
@@ -18,14 +17,20 @@ export default async function MvaPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const now = new Date();
   const year = params.year ? parseInt(params.year) : now.getFullYear();
-  const term = params.term ? parseInt(params.term) : getTermFromDate(now);
-
-  const result = await calculateTerm({ year, term });
+  const selectedTerm = params.term ? parseInt(params.term) : null;
 
   const allTerms = await db.mvaTerm.findMany({
     where: { userId: session.userId, year },
     orderBy: { term: "asc" },
   });
+
+  const result = selectedTerm
+    ? await calculateTerm({ year, term: selectedTerm })
+    : null;
+
+  const displayTerms = selectedTerm
+    ? allTerms.filter((t) => t.term === selectedTerm)
+    : allTerms;
 
   return (
     <div className="space-y-6">
@@ -36,14 +41,16 @@ export default async function MvaPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <TermSelector currentYear={year} currentTerm={term} />
+      <TermSelector currentYear={year} currentTerm={selectedTerm} />
 
-      <MvaTermOverview terms={allTerms} />
+      <MvaTermOverview terms={displayTerms} />
 
-      <MvaMeldingPreview
-        termData={result.mvaTerm}
-        transactions={result.transactions}
-      />
+      {result && (
+        <MvaMeldingPreview
+          termData={result.mvaTerm}
+          transactions={result.transactions}
+        />
+      )}
     </div>
   );
 }

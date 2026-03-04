@@ -25,6 +25,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { deleteTransaction } from "../Actions/deleteTransaction";
 
@@ -39,6 +45,7 @@ type Props = {
 export function TransactionList({ transactions }: Props) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedTx, setSelectedTx] = useState<TransactionWithSupplier | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = () => {
@@ -75,7 +82,7 @@ export function TransactionList({ transactions }: Props) {
         </TableHeader>
         <TableBody>
           {transactions.map((tx) => (
-            <TableRow key={tx.id}>
+            <TableRow key={tx.id} className="cursor-pointer" onClick={() => setSelectedTx(tx)}>
               <TableCell>{formatDate(tx.date)}</TableCell>
               <TableCell className="max-w-[200px] truncate">
                 {tx.description}

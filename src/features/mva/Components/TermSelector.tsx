@@ -12,7 +12,7 @@ import { formatTermLabel } from "@/lib/format";
 
 type TermSelectorProps = {
   currentYear: number;
-  currentTerm: number;
+  currentTerm: number | null;
 };
 
 export function TermSelector({ currentYear, currentTerm }: TermSelectorProps) {
@@ -20,15 +20,27 @@ export function TermSelector({ currentYear, currentTerm }: TermSelectorProps) {
   const currentYearNum = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYearNum - i);
 
-  function handleChange(year: string, term: string) {
-    router.push(`/mva?year=${year}&term=${term}`);
+  function handleYearChange(year: string) {
+    if (currentTerm) {
+      router.push(`/mva?year=${year}&term=${currentTerm}`);
+    } else {
+      router.push(`/mva?year=${year}`);
+    }
+  }
+
+  function handleTermChange(term: string) {
+    if (term === "ALL") {
+      router.push(`/mva?year=${currentYear}`);
+    } else {
+      router.push(`/mva?year=${currentYear}&term=${term}`);
+    }
   }
 
   return (
     <div className="flex items-center gap-3">
       <Select
         value={String(currentYear)}
-        onValueChange={(y) => handleChange(y, String(currentTerm))}
+        onValueChange={handleYearChange}
       >
         <SelectTrigger>
           <SelectValue placeholder="Velg år" />
@@ -43,13 +55,14 @@ export function TermSelector({ currentYear, currentTerm }: TermSelectorProps) {
       </Select>
 
       <Select
-        value={String(currentTerm)}
-        onValueChange={(t) => handleChange(String(currentYear), t)}
+        value={currentTerm ? String(currentTerm) : "ALL"}
+        onValueChange={handleTermChange}
       >
         <SelectTrigger>
           <SelectValue placeholder="Velg termin" />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="ALL">Alle terminer</SelectItem>
           {[1, 2, 3, 4, 5, 6].map((t) => (
             <SelectItem key={t} value={String(t)}>
               Termin {t} ({formatTermLabel(t)})

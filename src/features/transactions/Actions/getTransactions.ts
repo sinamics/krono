@@ -8,6 +8,7 @@ type TransactionFilters = {
   mvaCode?: string;
   search?: string;
   year?: string;
+  source?: string;
 };
 
 export async function getTransactions(filters: TransactionFilters) {
@@ -31,6 +32,12 @@ export async function getTransactions(filters: TransactionFilters) {
 
   if (filters.search) {
     where.description = { contains: filters.search };
+  }
+
+  if (filters.source === "manual") {
+    where.externalId = null;
+  } else if (filters.source === "stripe") {
+    where.externalId = { not: null };
   }
 
   return db.transaction.findMany({
