@@ -132,11 +132,12 @@ export const syncPaypalTransactions = withAuth(
       }
     }
 
-    // Filter: only successful payments with relevant event codes
+    // Filter: only successful, incoming payments (positive amount = money received)
     const validTransactions = allTransactions.filter(
       (t) =>
         t.transaction_info.transaction_status === "S" &&
-        PAYMENT_EVENT_CODES.has(t.transaction_info.transaction_event_code)
+        PAYMENT_EVENT_CODES.has(t.transaction_info.transaction_event_code) &&
+        parseFloat(t.transaction_info.transaction_amount.value) > 0
     );
 
     // Pre-fetch existing externalIds for deduplication
