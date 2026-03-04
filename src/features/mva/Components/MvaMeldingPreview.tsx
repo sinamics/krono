@@ -31,8 +31,10 @@ import {
   ExternalLink,
   ShieldCheck,
   Send,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
-import { formatCurrency, formatDate, formatTermLabel } from "@/lib/format";
+import { formatCurrency, formatDate, formatTermLabel, getMvaCodeLabel } from "@/lib/format";
 import { submitTerm } from "@/features/mva/Actions/submitTerm";
 import { reopenTerm } from "@/features/mva/Actions/reopenTerm";
 import { validateWithSkatteetaten } from "@/features/mva/Actions/validateWithSkatteetaten";
@@ -105,6 +107,41 @@ function getTermChecklist(
   return { warnings, passed };
 }
 
+function TransactionRows({ transactions }: { transactions: transaction[] }) {
+  if (transactions.length === 0) {
+    return (
+      <TableRow>
+        <TableCell
+          colSpan={4}
+          className="text-center text-sm text-muted-foreground bg-muted/30 py-2"
+        >
+          Ingen transaksjoner
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <>
+      {transactions.map((tx) => (
+        <TableRow key={tx.id} className="bg-muted/30 text-sm">
+          <TableCell className="pl-9 py-1.5">
+            <span className="text-muted-foreground mr-2">
+              {formatDate(tx.date)}
+            </span>
+            {tx.description}
+          </TableCell>
+          <TableCell className="text-right py-1.5">
+            {formatCurrency(tx.amountNOK)}
+          </TableCell>
+          <TableCell className="text-right py-1.5" />
+          <TableCell className="text-right py-1.5" />
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
 type MvaMeldingPreviewProps = {
   termData: mvaTerm;
   transactions: transaction[];
@@ -130,7 +167,16 @@ export function MvaMeldingPreview({
     instanceId?: string;
     error?: string;
   } | null>(null);
+  const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const { warnings, passed } = getTermChecklist(transactions, missingSuppliers);
+
+  function getTransactionsForCode(code: string): transaction[] {
+    return transactions.filter((tx) => tx.mvaCode === code);
+  }
+
+  function toggleCode(code: string) {
+    setExpandedCode((prev) => (prev === code ? null : code));
+  }
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -256,8 +302,18 @@ export function MvaMeldingPreview({
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow>
-              <TableCell>Kode 52 - Utførsel</TableCell>
+            <TableRow
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => toggleCode("CODE_52")}
+            >
+              <TableCell className="flex items-center gap-1.5">
+                {expandedCode === "CODE_52" ? (
+                  <ChevronDown className="size-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                )}
+                Kode 52 - Utførsel
+              </TableCell>
               <TableCell className="text-right">
                 {formatCurrency(termData.kode52Grunnlag)}
               </TableCell>
@@ -266,8 +322,21 @@ export function MvaMeldingPreview({
                 {formatCurrency(0)}
               </TableCell>
             </TableRow>
-            <TableRow>
-              <TableCell>Kode 86 - Beregnet</TableCell>
+            {expandedCode === "CODE_52" && (
+              <TransactionRows transactions={getTransactionsForCode("CODE_52")} />
+            )}
+            <TableRow
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => toggleCode("CODE_86")}
+            >
+              <TableCell className="flex items-center gap-1.5">
+                {expandedCode === "CODE_86" ? (
+                  <ChevronDown className="size-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                )}
+                Kode 86 - Beregnet
+              </TableCell>
               <TableCell className="text-right">
                 {formatCurrency(termData.kode86Grunnlag)}
               </TableCell>
@@ -276,24 +345,40 @@ export function MvaMeldingPreview({
                 {formatCurrency(termData.kode86Mva)}
               </TableCell>
             </TableRow>
+            {expandedCode === "CODE_86" && (
+              <TransactionRows transactions={getTransactionsForCode("CODE_86")} />
+            )}
             <TableRow>
-              <TableCell>Kode 86 - Fradrag</TableCell>
+              <TableCell className="pl-9">Kode 86 - Fradrag</TableCell>
               <TableCell className="text-right" />
               <TableCell className="text-right" />
               <TableCell className="text-right">
                 {formatCurrency(termData.kode86Fradrag)}
               </TableCell>
             </TableRow>
-            <TableRow>
-              <TableCell>Kode 1 - Fradrag</TableCell>
+            <TableRow
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => toggleCode("CODE_1")}
+            >
+              <TableCell className="flex items-center gap-1.5">
+                {expandedCode === "CODE_1" ? (
+                  <ChevronDown className="size-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                )}
+                Kode 1 - Fradrag
+              </TableCell>
               <TableCell className="text-right" />
               <TableCell className="text-right" />
               <TableCell className="text-right">
                 {formatCurrency(termData.kode1MvaFradrag)}
               </TableCell>
             </TableRow>
+            {expandedCode === "CODE_1" && (
+              <TransactionRows transactions={getTransactionsForCode("CODE_1")} />
+            )}
             <TableRow className="font-bold">
-              <TableCell>Sum MVA</TableCell>
+              <TableCell className="pl-9">Sum MVA</TableCell>
               <TableCell className="text-right" />
               <TableCell className="text-right" />
               <TableCell
