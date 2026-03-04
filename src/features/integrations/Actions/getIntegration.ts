@@ -28,3 +28,38 @@ export async function getStripeIntegration() {
 }
 
 export type StripeIntegration = Awaited<ReturnType<typeof getStripeIntegration>>;
+
+export async function getPaypalIntegration() {
+  const session = await getSession();
+  if (!session) return null;
+
+  const integration = await db.integration.findUnique({
+    where: {
+      userId_provider: {
+        userId: session.userId,
+        provider: "paypal",
+      },
+    },
+  });
+
+  if (!integration) return null;
+
+  let maskedClientId = "***";
+  try {
+    const parsed = JSON.parse(integration.apiKey);
+    const cid = parsed.clientId as string;
+    maskedClientId = `${cid.slice(0, 7)}...${cid.slice(-4)}`;
+  } catch {
+    // fallback
+  }
+
+  return {
+    id: integration.id,
+    isActive: integration.isActive,
+    lastSyncAt: integration.lastSyncAt,
+    createdAt: integration.createdAt,
+    maskedClientId,
+  };
+}
+
+export type PaypalIntegration = Awaited<ReturnType<typeof getPaypalIntegration>>;
