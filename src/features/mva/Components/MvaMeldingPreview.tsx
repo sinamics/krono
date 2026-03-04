@@ -24,10 +24,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  ExternalLink,
+  ShieldCheck,
+  Send,
+} from "lucide-react";
 import { formatCurrency, formatDate, formatTermLabel } from "@/lib/format";
 import { submitTerm } from "@/features/mva/Actions/submitTerm";
 import { reopenTerm } from "@/features/mva/Actions/reopenTerm";
+import { validateWithSkatteetaten } from "@/features/mva/Actions/validateWithSkatteetaten";
+import { submitToSkatteetaten } from "@/features/mva/Actions/submitToSkatteetaten";
+import { getUrls } from "@/lib/skatteetaten/constants";
 
 // Common recurring expense categories for Norwegian ENK businesses
 const EXPECTED_CATEGORIES: { key: string; label: string; matches: string[] }[] =
@@ -108,6 +118,18 @@ export function MvaMeldingPreview({
 }: MvaMeldingPreviewProps) {
   const [status, setStatus] = useState(termData.status);
   const [submitting, setSubmitting] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [skattSubmitting, setSkattSubmitting] = useState(false);
+  const [validationResult, setValidationResult] = useState<{
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+  } | null>(null);
+  const [skattResult, setSkattResult] = useState<{
+    success: boolean;
+    instanceId?: string;
+    error?: string;
+  } | null>(null);
   const { warnings, passed } = getTermChecklist(transactions, missingSuppliers);
 
   async function handleSubmit() {
@@ -131,6 +153,78 @@ export function MvaMeldingPreview({
       // Error handled by UI state remaining SUBMITTED
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function openIdPortenLogin() {
+    const clientId = process.env.NEXT_PUBLIC_IDPORTEN_CLIENT_ID;
+    const redirectUri = process.env.NEXT_PUBLIC_IDPORTEN_REDIRECT_URI;
+    const urls = getUrls();
+    const state = `${termData.year}-${termData.term}`;
+    const scope =
+      "openid skatteetaten:mvameldingvalidering skatteetaten:mvameldinginnsending";
+
+    const authUrl = new URL(urls.idPortenAuth);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("client_id", clientId ?? "");
+    authUrl.searchParams.set("redirect_uri", redirectUri ?? "");
+    authUrl.searchParams.set("scope", scope);
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("nonce", crypto.randomUUID());
+
+    window.open(authUrl.toString(), "_blank", "width=600,height=700");
+  }
+
+  async function handleValidate() {
+    setValidating(true);
+    setValidationResult(null);
+    try {
+      const result = await validateWithSkatteetaten({
+        year: termData.year,
+        term: termData.term,
+      });
+      setValidationResult(result);
+    } catch (err) {
+      if (err instanceof Error && err.message === "NEEDS_AUTH") {
+        openIdPortenLogin();
+      } else {
+        setValidationResult({
+          valid: false,
+          errors: [
+            err instanceof Error ? err.message : "Ukjent feil ved validering",
+          ],
+          warnings: [],
+        });
+      }
+    } finally {
+      setValidating(false);
+    }
+  }
+
+  async function handleSkattSubmit() {
+    setSkattSubmitting(true);
+    setSkattResult(null);
+    try {
+      const result = await submitToSkatteetaten({
+        year: termData.year,
+        term: termData.term,
+      });
+      setSkattResult(result);
+      if (result.success) {
+        setStatus("SUBMITTED");
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message === "NEEDS_AUTH") {
+        openIdPortenLogin();
+      } else {
+        setSkattResult({
+          success: false,
+          error:
+            err instanceof Error ? err.message : "Ukjent feil ved innsending",
+        });
+      }
+    } finally {
+      setSkattSubmitting(false);
     }
   }
 
@@ -213,91 +307,223 @@ export function MvaMeldingPreview({
         </Table>
 
         {status === "DRAFT" && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button disabled={submitting}>Marker som levert</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="max-w-md">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Bekreft levering</AlertDialogTitle>
-                <AlertDialogDescription asChild>
-                  <div className="space-y-3">
-                    <p>
-                      Er du sikker på at du vil markere termin {termData.term} (
-                      {formatTermLabel(termData.term)}) {termData.year} som
-                      levert? Transaksjonene vil bli låst for redigering.
-                    </p>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                disabled={validating || skattSubmitting}
+                onClick={handleValidate}
+              >
+                {validating ? (
+                  <Loader2 className="size-4 mr-2 animate-spin" />
+                ) : (
+                  <ShieldCheck className="size-4 mr-2" />
+                )}
+                Valider hos Skatteetaten
+              </Button>
 
-                    {warnings.length > 0 && (
-                      <div className="rounded-md border p-3 space-y-2">
-                        <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                          <AlertTriangle className="size-4 text-amber-500" />
-                          Mangler i denne terminen
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button disabled={validating || skattSubmitting}>
+                    {skattSubmitting ? (
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="size-4 mr-2" />
+                    )}
+                    Send til Skatteetaten
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-md">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Send MVA-melding til Skatteetaten
+                    </AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-3">
+                        <p>
+                          Du er i ferd med å sende MVA-meldingen for termin{" "}
+                          {termData.term} ({formatTermLabel(termData.term)}){" "}
+                          {termData.year} til Skatteetaten. Du må logge inn med
+                          ID-porten hvis du ikke allerede er innlogget.
                         </p>
-                        <ul className="space-y-1">
-                          {warnings.map((w) => (
-                            <li
-                              key={w}
-                              className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1.5"
-                            >
-                              <span className="size-1 rounded-full bg-amber-500 shrink-0" />
-                              {w}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
 
-                    {passed.length > 0 && (
-                      <div className="space-y-1">
-                        {passed.map((p) => (
-                          <div
-                            key={p}
-                            className="text-sm text-muted-foreground flex items-center gap-1.5"
-                          >
-                            <CheckCircle2 className="size-3.5 text-green-500" />
-                            {p}
+                        {warnings.length > 0 && (
+                          <div className="rounded-md border p-3 space-y-2">
+                            <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                              <AlertTriangle className="size-4 text-amber-500" />
+                              Mangler i denne terminen
+                            </p>
+                            <ul className="space-y-1">
+                              {warnings.map((w) => (
+                                <li
+                                  key={w}
+                                  className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1.5"
+                                >
+                                  <span className="size-1 rounded-full bg-amber-500 shrink-0" />
+                                  {w}
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                        ))}
+                        )}
+
+                        {passed.length > 0 && (
+                          <div className="space-y-1">
+                            {passed.map((p) => (
+                              <div
+                                key={p}
+                                className="text-sm text-muted-foreground flex items-center gap-1.5"
+                              >
+                                <CheckCircle2 className="size-3.5 text-green-500" />
+                                {p}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSubmit}>
-                  Bekreft
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSkattSubmit}>
+                      Send inn
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="secondary" disabled={submitting}>
+                    Marker som levert
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-md">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Bekreft levering</AlertDialogTitle>
+                    <AlertDialogDescription asChild>
+                      <div className="space-y-3">
+                        <p>
+                          Er du sikker på at du vil markere termin{" "}
+                          {termData.term} ({formatTermLabel(termData.term)}){" "}
+                          {termData.year} som levert? Transaksjonene vil bli låst
+                          for redigering.
+                        </p>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSubmit}>
+                      Bekreft
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            {validationResult && (
+              <div
+                className={`rounded-md border p-3 space-y-2 ${
+                  validationResult.valid
+                    ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
+                    : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
+                }`}
+              >
+                <p
+                  className={`text-sm font-medium flex items-center gap-1.5 ${
+                    validationResult.valid
+                      ? "text-green-700 dark:text-green-300"
+                      : "text-red-700 dark:text-red-300"
+                  }`}
+                >
+                  {validationResult.valid ? (
+                    <CheckCircle2 className="size-4" />
+                  ) : (
+                    <AlertTriangle className="size-4" />
+                  )}
+                  {validationResult.valid
+                    ? "Validering godkjent"
+                    : "Validering feilet"}
+                </p>
+                {validationResult.errors.map((e, i) => (
+                  <p
+                    key={i}
+                    className="text-sm text-red-600 dark:text-red-400"
+                  >
+                    {e}
+                  </p>
+                ))}
+                {validationResult.warnings.map((w, i) => (
+                  <p
+                    key={i}
+                    className="text-sm text-amber-600 dark:text-amber-400"
+                  >
+                    {w}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {skattResult && !skattResult.success && (
+              <div className="rounded-md border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950 p-3">
+                <p className="text-sm font-medium text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                  <AlertTriangle className="size-4" />
+                  Innsending feilet
+                </p>
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {skattResult.error}
+                </p>
+              </div>
+            )}
+          </div>
         )}
 
         {status === "SUBMITTED" && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" disabled={submitting}>
-                Gjenåpne termin
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Gjenåpne termin</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Dette vil sette termin {termData.term} (
-                  {formatTermLabel(termData.term)}) {termData.year} tilbake til
-                  utkast. Transaksjonene vil bli låst opp for redigering.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                <AlertDialogAction onClick={handleReopen}>
-                  Gjenåpne
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="space-y-3">
+            {termData.submittedAt && (
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                <CheckCircle2 className="size-4 text-green-500" />
+                Sendt til Skatteetaten {formatDate(termData.submittedAt)}
+              </p>
+            )}
+
+            {skattResult?.success && skattResult.instanceId && (
+              <div className="rounded-md border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 p-3">
+                <p className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="size-4" />
+                  MVA-melding sendt inn
+                </p>
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  Instans-ID: {skattResult.instanceId}
+                </p>
+              </div>
+            )}
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" disabled={submitting}>
+                  Gjenåpne termin
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Gjenåpne termin</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Dette vil sette termin {termData.term} (
+                    {formatTermLabel(termData.term)}) {termData.year} tilbake til
+                    utkast. Transaksjonene vil bli låst opp for redigering.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReopen}>
+                    Gjenåpne
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </CardContent>
     </Card>
