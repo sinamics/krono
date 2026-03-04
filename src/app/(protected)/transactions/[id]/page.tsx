@@ -1,10 +1,11 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 import { getSession } from "@/lib/withAuth";
 import { db } from "@/lib/db";
 import { getTransactionById } from "@/features/transactions/Actions/getTransactions";
 import { TransactionForm } from "@/features/transactions/Components/TransactionForm";
+import { isTermLocked } from "@/lib/term-lock";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,6 +34,8 @@ export default async function EditTransactionPage({ params }: Props) {
   const { id } = await params;
   const transaction = await getTransactionById(id, session.userId);
   if (!transaction) notFound();
+
+  const locked = await isTermLocked(session.userId, transaction.termPeriod);
 
   const suppliers = await db.supplier.findMany({
     where: { userId: session.userId },
@@ -101,18 +104,32 @@ export default async function EditTransactionPage({ params }: Props) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Endre transaksjon</CardTitle>
-          <CardDescription>
-            Oppdater feltene nedenfor og trykk lagre.
-          </CardDescription>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-6">
-          <TransactionForm suppliers={suppliers} transaction={transaction} />
-        </CardContent>
-      </Card>
+      {locked ? (
+        <Card>
+          <CardContent className="flex items-center gap-3 py-6">
+            <Lock className="size-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">Transaksjonen er låst</p>
+              <p className="text-sm text-muted-foreground">
+                MVA-terminen er levert. Transaksjonen kan ikke endres.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Endre transaksjon</CardTitle>
+            <CardDescription>
+              Oppdater feltene nedenfor og trykk lagre.
+            </CardDescription>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-6">
+            <TransactionForm suppliers={suppliers} transaction={transaction} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

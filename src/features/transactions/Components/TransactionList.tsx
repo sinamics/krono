@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2, Pencil, Paperclip } from "lucide-react";
+import { Trash2, Pencil, Paperclip, Lock } from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -49,9 +49,11 @@ type Props = {
   total: number;
   page: number;
   pageSize: number;
+  lockedTermPeriods?: string[];
 };
 
-export function TransactionList({ transactions, total, page, pageSize }: Props) {
+export function TransactionList({ transactions, total, page, pageSize, lockedTermPeriods = [] }: Props) {
+  const lockedSet = useMemo(() => new Set(lockedTermPeriods), [lockedTermPeriods]);
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showBulkDelete, setShowBulkDelete] = useState(false);
@@ -94,16 +96,21 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
             onChange={table.getToggleAllPageRowsSelectedHandler()}
           />
         ),
-        cell: ({ row }) => (
-          <div onClick={(e) => e.stopPropagation()}>
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border"
-              checked={row.getIsSelected()}
-              onChange={row.getToggleSelectedHandler()}
-            />
-          </div>
-        ),
+        cell: ({ row, table }) => {
+          const meta = table.options.meta as { lockedSet: Set<string> };
+          const isLocked = meta.lockedSet.has(row.original.termPeriod);
+          return (
+            <div onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border"
+                checked={row.getIsSelected()}
+                disabled={isLocked}
+                onChange={row.getToggleSelectedHandler()}
+              />
+            </div>
+          );
+        },
       },
       {
         accessorKey: "bilagsnummer",
@@ -180,7 +187,17 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
         id: "actions",
         header: () => <span className="flex justify-end">Handlinger</span>,
         cell: ({ row, table }) => {
-          const meta = table.options.meta as { setDeleteId: (id: string) => void };
+          const meta = table.options.meta as { setDeleteId: (id: string) => void; lockedSet: Set<string> };
+          const isLocked = meta.lockedSet.has(row.original.termPeriod);
+
+          if (isLocked) {
+            return (
+              <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                <Lock className="size-3.5 text-muted-foreground" />
+              </div>
+            );
+          }
+
           return (
             <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon-xs" asChild>
@@ -211,7 +228,7 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
     rowCount: total,
     state: { rowSelection },
     onRowSelectionChange: setRowSelection,
-    meta: { setDeleteId },
+    meta: { setDeleteId, lockedSet },
   });
 
   if (transactions.length === 0) {
@@ -358,12 +375,19 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
                 <AuditLog transactionId={selectedTx.id} />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/transactions/${selectedTx.id}`}>
-                    <Pencil className="mr-1 h-3 w-3" />
-                    Rediger
-                  </Link>
-                </Button>
+                {lockedSet.has(selectedTx.termPeriod) ? (
+                  <Badge variant="secondary" className="gap-1">
+                    <Lock className="size-3" />
+                    Låst (termin levert)
+                  </Badge>
+                ) : (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href={`/transactions/${selectedTx.id}`}>
+                      <Pencil className="mr-1 h-3 w-3" />
+                      Rediger
+                    </Link>
+                  </Button>
+                )}
               </div>
             </>
           )}
