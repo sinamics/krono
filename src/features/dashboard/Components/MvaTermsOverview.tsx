@@ -54,7 +54,7 @@ export function MvaTermsOverview({
 
       {/* Desktop table */}
       <div className="hidden md:block">
-        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-6 px-4 py-2 border-b bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="grid grid-cols-[1fr_7rem_7rem_7rem_6rem_6rem] gap-x-4 px-4 py-2 border-b bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
           <span>Termin</span>
           <span className="text-right">Salg</span>
           <span className="text-right">Utgifter</span>
@@ -69,7 +69,7 @@ export function MvaTermsOverview({
               key={t.term}
               href={`/mva?year=${year}&term=${t.term}`}
               className={cn(
-                "group grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-6 items-center px-4 py-2.5 border-b last:border-b-0 transition-colors hover:bg-accent/50",
+                "group grid grid-cols-[1fr_7rem_7rem_7rem_6rem_6rem] gap-x-4 items-center px-4 py-2.5 border-b last:border-b-0 transition-colors hover:bg-accent/50",
                 isCurrent && "bg-primary/[0.04]"
               )}
             >

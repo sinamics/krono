@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   "currency": "NOK eller EUR eller USD",
   "date": "YYYY-MM-DD",
   "supplierName": "leverandørens navn",
-  "category": "f.eks. Kontor, Reise, Mat, Programvare, Utstyr",
+  "category": "en av: Internet, Telefon, Kontor, Reise, Mat, Programvare, Utstyr, Forsikring, Regnskap, Markedsføring, Annet",
   "reference": "referansenummer, fakturanummer, ordrenummer eller KID-nummer hvis det finnes"
 }
 
