@@ -2,32 +2,42 @@
 
 import Link from "next/link";
 import type { mvaTerm } from "@/generated/db/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate, formatTermLabel } from "@/lib/format";
+import { formatCurrency, formatTermLabel } from "@/lib/format";
+import { CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 
 type MvaTermOverviewProps = {
   terms: mvaTerm[];
 };
 
-function getTermColor(term: mvaTerm): string {
-  if (term.status === "SUBMITTED")
-    return "border-green-500/50 bg-green-500/10";
-  const now = new Date();
-  if (new Date(term.deadline) < now)
-    return "border-red-500/50 bg-red-500/10";
-  return "border-yellow-500/50 bg-yellow-500/10";
-}
-
-function getStatusBadge(term: mvaTerm) {
+function getStatus(term: mvaTerm) {
   if (term.status === "SUBMITTED") {
-    return <Badge variant="default">Levert</Badge>;
+    return {
+      label: "Levert",
+      variant: "default" as const,
+      icon: CheckCircle2,
+      border: "border-green-500/30",
+      iconColor: "text-green-500",
+    };
   }
   const now = new Date();
   if (new Date(term.deadline) < now) {
-    return <Badge variant="destructive">Forfalt</Badge>;
+    return {
+      label: "Forfalt",
+      variant: "destructive" as const,
+      icon: AlertTriangle,
+      border: "border-red-500/30",
+      iconColor: "text-red-500",
+    };
   }
-  return <Badge variant="secondary">Utkast</Badge>;
+  return {
+    label: "Utkast",
+    variant: "secondary" as const,
+    icon: Clock,
+    border: "border-border",
+    iconColor: "text-muted-foreground",
+  };
 }
 
 export function MvaTermOverview({ terms }: MvaTermOverviewProps) {
@@ -40,18 +50,48 @@ export function MvaTermOverview({ terms }: MvaTermOverviewProps) {
   }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
-      {terms.map((term) => (
-        <Link key={term.id} href={`/mva?year=${term.year}&term=${term.term}`}>
-          <Card className={`${getTermColor(term)} transition-colors hover:bg-accent/50 cursor-pointer`}>
-            <div className="flex items-center justify-between gap-2 px-2.5 py-1.5">
-              <span className="text-xs font-medium">Termin {term.term}</span>
-              <span className="text-xs tabular-nums">{formatCurrency(term.totalMva)}</span>
-              {getStatusBadge(term)}
-            </div>
-          </Card>
-        </Link>
-      ))}
+    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+      {terms.map((term) => {
+        const status = getStatus(term);
+        const Icon = status.icon;
+
+        return (
+          <Link
+            key={term.id}
+            href={`/mva?year=${term.year}&term=${term.term}`}
+          >
+            <Card
+              className={`${status.border} p-4 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold">Termin {term.term}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatTermLabel(term.term)}
+                  </p>
+                </div>
+                <Icon className={`size-4 ${status.iconColor} shrink-0`} />
+              </div>
+
+              <p
+                className={`text-lg font-bold tabular-nums ${
+                  term.totalMva < 0
+                    ? "text-green-600 dark:text-green-400"
+                    : ""
+                }`}
+              >
+                {formatCurrency(term.totalMva)}
+              </p>
+
+              <div className="mt-2">
+                <Badge variant={status.variant} className="text-xs">
+                  {status.label}
+                </Badge>
+              </div>
+            </Card>
+          </Link>
+        );
+      })}
     </div>
   );
 }
