@@ -32,14 +32,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  stripeKeySchema,
+  paypalKeySchema,
   syncParamsSchema,
-  type StripeKeyFormData,
+  type PaypalKeyFormData,
   type SyncParamsFormData,
 } from "../Schema/integrationSchema";
-import { saveStripeKey, disconnectStripe } from "../Actions/saveStripeKey";
-import { syncStripeTransactions } from "../Actions/syncStripeTransactions";
-import type { StripeIntegration } from "../Actions/getIntegration";
+import { savePaypalKey, disconnectPaypal } from "../Actions/savePaypalKey";
+import { syncPaypalTransactions } from "../Actions/syncPaypalTransactions";
+import type { PaypalIntegration } from "../Actions/getIntegration";
 
 type SyncResult = {
   imported: number;
@@ -48,10 +48,10 @@ type SyncResult = {
 };
 
 interface Props {
-  integration: StripeIntegration;
+  integration: PaypalIntegration;
 }
 
-export function StripeConnectionCard({ integration }: Props) {
+export function PaypalConnectionCard({ integration }: Props) {
   const [isPending, startTransition] = useTransition();
   const [isSyncing, startSyncTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -59,9 +59,9 @@ export function StripeConnectionCard({ integration }: Props) {
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  const connectForm = useForm<StripeKeyFormData>({
-    resolver: zodResolver(stripeKeySchema),
-    defaultValues: { apiKey: "" },
+  const connectForm = useForm<PaypalKeyFormData>({
+    resolver: zodResolver(paypalKeySchema),
+    defaultValues: { clientId: "", secret: "" },
   });
 
   const thirtyDaysAgo = new Date();
@@ -78,16 +78,16 @@ export function StripeConnectionCard({ integration }: Props) {
     syncForm.setValue("to", now);
   }
 
-  function onConnect(data: StripeKeyFormData) {
+  function onConnect(data: PaypalKeyFormData) {
     setError(null);
     startTransition(async () => {
       try {
-        await saveStripeKey(data);
+        await savePaypalKey(data);
         connectForm.reset();
         window.location.reload();
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Kunne ikke koble til Stripe."
+          err instanceof Error ? err.message : "Kunne ikke koble til PayPal."
         );
       }
     });
@@ -97,11 +97,11 @@ export function StripeConnectionCard({ integration }: Props) {
     setError(null);
     startTransition(async () => {
       try {
-        await disconnectStripe();
+        await disconnectPaypal();
         setCurrent(null);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Kunne ikke koble fra Stripe."
+          err instanceof Error ? err.message : "Kunne ikke koble fra PayPal."
         );
       }
     });
@@ -112,7 +112,7 @@ export function StripeConnectionCard({ integration }: Props) {
     setSyncResult(null);
     startSyncTransition(async () => {
       try {
-        const res = await syncStripeTransactions(data);
+        const res = await syncPaypalTransactions(data);
         setSyncResult(res);
       } catch (err) {
         setSyncError(
@@ -127,9 +127,9 @@ export function StripeConnectionCard({ integration }: Props) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Stripe</CardTitle>
+            <CardTitle>PayPal</CardTitle>
             <CardDescription>
-              Importer salg og gebyrer automatisk fra Stripe.
+              Importer salg og gebyrer automatisk fra PayPal.
             </CardDescription>
           </div>
           {current?.isActive ? (
@@ -145,7 +145,7 @@ export function StripeConnectionCard({ integration }: Props) {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">
-                  Nøkkel: {current.maskedKey}
+                  Client ID: {current.maskedClientId}
                 </p>
                 {current.lastSyncAt && (
                   <p className="text-sm text-muted-foreground">
@@ -286,14 +286,27 @@ export function StripeConnectionCard({ integration }: Props) {
             <form onSubmit={connectForm.handleSubmit(onConnect)} className="space-y-4">
               <FormField
                 control={connectForm.control}
-                name="apiKey"
+                name="clientId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Secret API-nøkkel</FormLabel>
+                    <FormLabel>Client ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Client ID" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={connectForm.control}
+                name="secret"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Secret</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="sk_live_..."
+                        placeholder="Secret"
                         {...field}
                       />
                     </FormControl>

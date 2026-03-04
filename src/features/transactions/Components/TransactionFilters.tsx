@@ -34,6 +34,7 @@ export function TransactionFilters() {
       } else {
         params.delete(key);
       }
+      params.delete("page");
       router.push(`/transactions?${params.toString()}`);
     },
     [router, searchParams]
@@ -114,6 +115,7 @@ export function TransactionFilters() {
           <SelectItem value="ALL">Alle kilder</SelectItem>
           <SelectItem value="manual">Manuell</SelectItem>
           <SelectItem value="stripe">Stripe</SelectItem>
+          <SelectItem value="paypal">PayPal</SelectItem>
         </SelectContent>
       </Select>
 

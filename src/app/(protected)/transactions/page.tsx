@@ -14,6 +14,7 @@ type Props = {
     mvaCode?: string;
     search?: string;
     source?: string;
+    page?: string;
   }>;
 };
 
@@ -23,10 +24,11 @@ export default async function TransactionsPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const year = params.year ?? String(new Date().getFullYear());
+  const page = Math.max(1, Number(params.page) || 1);
 
   const termPeriod = params.term ? `${year}-${params.term}` : undefined;
 
-  const transactions = await getTransactions({
+  const result = await getTransactions({
     userId: session.userId,
     termPeriod,
     type: params.type,
@@ -34,6 +36,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
     search: params.search,
     source: params.source,
     year: termPeriod ? undefined : year,
+    page,
   });
 
   const suppliers = await db.supplier.findMany({
@@ -48,7 +51,12 @@ export default async function TransactionsPage({ searchParams }: Props) {
         <NewTransactionDialog suppliers={suppliers} />
       </div>
       <TransactionFilters />
-      <TransactionList transactions={transactions} />
+      <TransactionList
+        transactions={result.data}
+        total={result.total}
+        page={result.page}
+        pageSize={result.pageSize}
+      />
     </div>
   );
 }
