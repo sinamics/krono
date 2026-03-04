@@ -15,6 +15,7 @@ const pageTitles: Record<string, string> = {
   "/transactions": "Transaksjoner",
   "/mva": "MVA-melding",
   "/reports": "Rapporter",
+  "/arsoppgjor": "Årsoppgjør",
   "/suppliers": "Leverandører",
   "/settings": "Innstillinger",
 };
