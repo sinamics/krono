@@ -44,7 +44,7 @@ services:
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
       PGPASS_FILE: /pgpass
     ports:
-      - "8081:80"
+      - "8080:80"
     depends_on:
       - db
     volumes:

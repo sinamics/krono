@@ -1,7 +1,12 @@
 "use client";
 
+import {
+  TrendingUp,
+  TrendingDown,
+  ArrowUpDown,
+  Receipt,
+} from "lucide-react";
 import type { YearToDateData } from "@/features/dashboard/Actions/getDashboardData";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
 
 type DashboardStatsProps = {
@@ -9,46 +14,67 @@ type DashboardStatsProps = {
 };
 
 export function DashboardStats({ yearToDate }: DashboardStatsProps) {
-  const items = [
-    {
-      title: "Salg i år",
-      value: formatCurrency(yearToDate.totalSales),
-    },
-    {
-      title: "Utgifter i år",
-      value: formatCurrency(yearToDate.totalExpenses),
-    },
-    {
-      title: "Nettoresultat",
-      value: formatCurrency(yearToDate.netResult),
-      colorClass: yearToDate.netResult >= 0 ? "text-green-600" : "text-red-600",
-    },
-    {
-      title: "Transaksjoner",
-      value: yearToDate.transactionCount.toString(),
-    },
-  ];
+  const isPositive = yearToDate.netResult >= 0;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {items.map((item) => (
-        <Card key={item.title}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {item.title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p
-              className={`text-2xl font-bold ${
-                "colorClass" in item && item.colorClass ? item.colorClass : ""
-              }`}
-            >
-              {item.value}
-            </p>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border rounded-lg overflow-hidden border">
+      <div className="bg-card p-4 flex items-center gap-3">
+        <div className="shrink-0 rounded-md bg-green-500/10 p-2 text-green-600">
+          <TrendingUp className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground truncate">Salg i år</p>
+          <p className="text-lg font-semibold tabular-nums tracking-tight">
+            {formatCurrency(yearToDate.totalSales)}
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-card p-4 flex items-center gap-3">
+        <div className="shrink-0 rounded-md bg-red-500/10 p-2 text-red-600">
+          <TrendingDown className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground truncate">Utgifter i år</p>
+          <p className="text-lg font-semibold tabular-nums tracking-tight">
+            {formatCurrency(yearToDate.totalExpenses)}
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-card p-4 flex items-center gap-3">
+        <div
+          className={`shrink-0 rounded-md p-2 ${
+            isPositive
+              ? "bg-green-500/10 text-green-600"
+              : "bg-red-500/10 text-red-600"
+          }`}
+        >
+          <ArrowUpDown className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground truncate">Nettoresultat</p>
+          <p
+            className={`text-lg font-semibold tabular-nums tracking-tight ${
+              isPositive ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {formatCurrency(yearToDate.netResult)}
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-card p-4 flex items-center gap-3">
+        <div className="shrink-0 rounded-md bg-blue-500/10 p-2 text-blue-600">
+          <Receipt className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground truncate">Transaksjoner</p>
+          <p className="text-lg font-semibold tabular-nums tracking-tight">
+            {yearToDate.transactionCount}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

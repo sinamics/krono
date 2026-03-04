@@ -103,6 +103,20 @@ export function TransactionFilters() {
         </SelectContent>
       </Select>
 
+      <Select
+        value={searchParams.get("source") ?? "ALL"}
+        onValueChange={(v) => updateParam("source", v)}
+      >
+        <SelectTrigger className="w-[150px]">
+          <SelectValue placeholder="Alle kilder" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="ALL">Alle kilder</SelectItem>
+          <SelectItem value="manual">Manuell</SelectItem>
+          <SelectItem value="stripe">Stripe</SelectItem>
+        </SelectContent>
+      </Select>
+
       <Input
         placeholder="Søk beskrivelse..."
         defaultValue={searchParams.get("search") ?? ""}

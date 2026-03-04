@@ -8,6 +8,7 @@ const navItems = [
   { href: "/settings", label: "Bedriftsinformasjon" },
   { href: "/settings/ekom", label: "EKOM" },
   { href: "/settings/profile", label: "Profil" },
+  { href: "/settings/integrations", label: "Integrasjoner" },
 ];
 
 export function SettingsNav() {

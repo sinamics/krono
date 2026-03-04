@@ -28,15 +28,16 @@ export type YearToDateData = {
 export type DashboardData = {
   allTerms: TermData[];
   yearToDate: YearToDateData;
+  currentTerm: number;
   recentTransactions: Awaited<ReturnType<typeof db.transaction.findMany>>;
 };
 
-export const getDashboardData = withAuth(async (auth) => {
+export const getDashboardData = withAuth(async (auth, year: number) => {
   const now = new Date();
-  const year = now.getFullYear();
+  const currentYear = now.getFullYear();
   const currentTerm = getTermFromDate(now);
 
-  // Fetch all transactions for the current year
+  // Fetch all transactions for the selected year
   const allTransactions = await db.transaction.findMany({
     where: {
       userId: auth.userId,
@@ -45,7 +46,7 @@ export const getDashboardData = withAuth(async (auth) => {
     orderBy: { date: "desc" },
   });
 
-  // Fetch all MVA terms for the current year
+  // Fetch all MVA terms for the selected year
   const mvaTerms = await db.mvaTerm.findMany({
     where: { userId: auth.userId, year },
   });
@@ -73,7 +74,7 @@ export const getDashboardData = withAuth(async (auth) => {
     let status: TermData["status"] = "DRAFT";
     if (isSubmitted) {
       status = "SUBMITTED";
-    } else if (isPast && term < currentTerm) {
+    } else if (isPast && (year < currentYear || term < currentTerm)) {
       status = "OVERDUE";
     }
 
@@ -88,7 +89,7 @@ export const getDashboardData = withAuth(async (auth) => {
     });
   }
 
-  // Year-to-date totals
+  // Year totals
   let totalSales = 0;
   let totalExpenses = 0;
   for (const tx of allTransactions) {
@@ -105,5 +106,10 @@ export const getDashboardData = withAuth(async (auth) => {
 
   const recentTransactions = allTransactions.slice(0, 5);
 
-  return { allTerms, yearToDate, recentTransactions } as DashboardData;
+  return {
+    allTerms,
+    yearToDate,
+    currentTerm,
+    recentTransactions,
+  } as DashboardData;
 });

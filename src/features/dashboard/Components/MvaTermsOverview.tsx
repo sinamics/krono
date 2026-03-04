@@ -1,80 +1,155 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import type { TermData } from "@/features/dashboard/Actions/getDashboardData";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate, getTermFromDate } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type MvaTermsOverviewProps = {
   terms: TermData[];
   year: number;
+  currentTerm: number;
 };
 
-function getStatusBadge(status: TermData["status"]) {
+function StatusBadge({ status }: { status: TermData["status"] }) {
   switch (status) {
     case "SUBMITTED":
-      return <Badge variant="default" className="bg-green-600 hover:bg-green-700">Levert</Badge>;
+      return (
+        <Badge
+          variant="default"
+          className="bg-green-600 hover:bg-green-700 text-[11px] px-1.5 py-0"
+        >
+          Levert
+        </Badge>
+      );
     case "OVERDUE":
-      return <Badge variant="destructive">Forfalt</Badge>;
+      return (
+        <Badge variant="destructive" className="text-[11px] px-1.5 py-0">
+          Forfalt
+        </Badge>
+      );
     default:
-      return <Badge variant="secondary">Utkast</Badge>;
+      return (
+        <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+          Utkast
+        </Badge>
+      );
   }
 }
 
-export function MvaTermsOverview({ terms, year }: MvaTermsOverviewProps) {
-  const currentTerm = getTermFromDate(new Date());
+export function MvaTermsOverview({
+  terms,
+  year,
+  currentTerm,
+}: MvaTermsOverviewProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">MVA-terminer {year}</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="rounded-lg border overflow-hidden">
+      <div className="bg-muted/50 px-4 py-2.5 border-b">
+        <h2 className="text-sm font-semibold">MVA-terminer {year}</h2>
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-6 px-4 py-2 border-b bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+          <span>Termin</span>
+          <span className="text-right">Salg</span>
+          <span className="text-right">Utgifter</span>
+          <span className="text-right">MVA</span>
+          <span className="text-right">Frist</span>
+          <span className="text-right">Status</span>
+        </div>
         {terms.map((t) => {
           const isCurrent = t.term === currentTerm && year === currentYear;
           return (
             <Link
               key={t.term}
               href={`/mva?year=${year}&term=${t.term}`}
-              className="block"
+              className={cn(
+                "group grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-6 items-center px-4 py-2.5 border-b last:border-b-0 transition-colors hover:bg-accent/50",
+                isCurrent && "bg-primary/[0.04]"
+              )}
             >
-              <Card
-                className={`transition-colors hover:border-primary/50 h-full ${
-                  isCurrent ? "border-primary border-2" : ""
-                }`}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium">
-                      Termin {t.term} — {t.label}
-                    </CardTitle>
-                    {getStatusBadge(t.status)}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Salg</span>
-                    <span className="text-green-600 font-medium">
-                      {formatCurrency(t.salesTotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Utgifter</span>
-                    <span className="text-red-600 font-medium">
-                      {formatCurrency(t.expensesTotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm border-t pt-1">
-                    <span className="text-muted-foreground">MVA</span>
-                    <span className="font-semibold">
-                      {formatCurrency(t.totalMva)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground pt-1">
-                    Frist: {formatDate(t.deadline)}
+              <span className="flex items-center gap-2 text-sm font-medium">
+                {isCurrent && (
+                  <span className="size-1.5 rounded-full bg-primary shrink-0" />
+                )}
+                <span>
+                  T{t.term}{" "}
+                  <span className="text-muted-foreground font-normal">
+                    {t.label}
+                  </span>
+                </span>
+              </span>
+              <span className="text-sm tabular-nums text-right text-green-600">
+                {formatCurrency(t.salesTotal)}
+              </span>
+              <span className="text-sm tabular-nums text-right text-red-600">
+                {formatCurrency(t.expensesTotal)}
+              </span>
+              <span className="text-sm tabular-nums text-right font-medium">
+                {formatCurrency(t.totalMva)}
+              </span>
+              <span className="text-xs tabular-nums text-right text-muted-foreground">
+                {formatDate(t.deadline)}
+              </span>
+              <span className="flex items-center justify-end gap-2">
+                <StatusBadge status={t.status} />
+                <ArrowRight className="size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden divide-y">
+        {terms.map((t) => {
+          const isCurrent = t.term === currentTerm && year === currentYear;
+          return (
+            <Link
+              key={t.term}
+              href={`/mva?year=${year}&term=${t.term}`}
+              className={cn(
+                "block px-4 py-3 transition-colors active:bg-accent/50",
+                isCurrent && "bg-primary/[0.04]"
+              )}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  {isCurrent && (
+                    <span className="size-1.5 rounded-full bg-primary shrink-0" />
+                  )}
+                  T{t.term} — {t.label}
+                </span>
+                <StatusBadge status={t.status} />
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <span className="text-muted-foreground">Salg</span>
+                  <p className="font-medium tabular-nums text-green-600">
+                    {formatCurrency(t.salesTotal)}
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Utgifter</span>
+                  <p className="font-medium tabular-nums text-red-600">
+                    {formatCurrency(t.expensesTotal)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">MVA</span>
+                  <p className="font-medium tabular-nums">
+                    {formatCurrency(t.totalMva)}
+                  </p>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Frist: {formatDate(t.deadline)}
+              </p>
             </Link>
           );
         })}

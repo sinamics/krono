@@ -52,7 +52,7 @@ export const createTransaction = withAuth(
         amountNOK,
         type: data.type,
         mvaCode,
-        supplierId: data.type === "EXPENSE" ? data.supplierId : undefined,
+        supplierId: data.type === "EXPENSE" && data.supplierId ? data.supplierId : undefined,
         category: data.category || undefined,
         isRecurring: data.isRecurring,
         recurringDay: data.isRecurring ? data.recurringDay : undefined,

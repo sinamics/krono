@@ -1,12 +1,12 @@
 {
   "Servers": {
     "1": {
-      "Name": "Torqvoice.com DB",
+      "Name": "Krono DB",
       "Group": "Servers",
       "Host": "db",
       "Port": 5432,
-      "MaintenanceDB": "torqvoice_com",
-      "Username": "torqvoice_com",
+      "MaintenanceDB": "krono",
+      "Username": "krono",
       "SSLMode": "prefer"
     }
   }
