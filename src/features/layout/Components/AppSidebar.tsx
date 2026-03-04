@@ -32,6 +32,7 @@ import {
   Building2,
   Settings,
   LogOut,
+  FileSpreadsheet,
   Calculator,
   ChevronsUpDown,
   Moon,
@@ -44,6 +45,7 @@ const navItems = [
   { title: "Transaksjoner", href: "/transactions", icon: ArrowLeftRight },
   { title: "MVA-melding", href: "/mva", icon: FileText },
   { title: "Rapporter", href: "/reports", icon: BarChart3 },
+  { title: "Årsoppgjør", href: "/arsoppgjor", icon: FileSpreadsheet },
   { title: "Leverandører", href: "/suppliers", icon: Building2 },
   { title: "Innstillinger", href: "/settings", icon: Settings },
 ];
