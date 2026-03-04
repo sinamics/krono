@@ -120,7 +120,7 @@ export function TransactionFilters() {
       </Select>
 
       <Input
-        placeholder="Søk beskrivelse..."
+        placeholder="Søk beskrivelse, leverandør, beløp..."
         defaultValue={searchParams.get("search") ?? ""}
         className="w-[200px]"
         onChange={(e) => {

@@ -1,10 +1,12 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import type { TransactionFormValues } from "../Schema/transactionSchema";
+import { getExchangeRate } from "../Actions/getExchangeRate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -94,8 +96,35 @@ export function DateField({ form }: FormProps) {
   );
 }
 
-export function AmountFields({ form }: FormProps) {
+export function AmountFields({ form, isEditing }: FormProps & { isEditing?: boolean }) {
   const currency = form.watch("currency");
+  const date = form.watch("date");
+  const [fetching, setFetching] = useState(false);
+  const initialMount = useState(true);
+
+  const fetchRate = useCallback(() => {
+    if (currency === "NOK") {
+      form.setValue("exchangeRate", 1);
+      return;
+    }
+
+    setFetching(true);
+    getExchangeRate(currency, date)
+      .then((rate) => {
+        if (rate) form.setValue("exchangeRate", rate);
+      })
+      .finally(() => setFetching(false));
+  }, [currency, date, form]);
+
+  useEffect(() => {
+    if (isEditing && initialMount[0]) {
+      initialMount[0] = false;
+      return;
+    }
+    initialMount[0] = false;
+    fetchRate();
+  }, [fetchRate]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="grid grid-cols-3 gap-4">
       <FormField
@@ -139,7 +168,21 @@ export function AmountFields({ form }: FormProps) {
           name="exchangeRate"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Valutakurs</FormLabel>
+              <FormLabel className="flex items-center gap-1">
+                Valutakurs
+                {fetching ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={fetchRate}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    title="Hent valutakurs på nytt"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </button>
+                )}
+              </FormLabel>
               <FormControl>
                 <Input type="number" step="0.0001" {...field} />
               </FormControl>

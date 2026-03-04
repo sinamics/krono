@@ -11,6 +11,7 @@ import {
 } from "../Schema/transactionSchema";
 import { createTransaction } from "../Actions/createTransaction";
 import { updateTransaction } from "../Actions/updateTransaction";
+import { checkDuplicate } from "../Actions/checkDuplicate";
 import { createSupplier } from "@/features/suppliers/Actions/createSupplier";
 import { AmountFields, DateField, TypeField } from "./TransactionFormFields";
 import { ExpenseFields, OptionalFields } from "./TransactionFormExtra";
@@ -42,6 +43,9 @@ export function TransactionForm({
   const [suppliersList, setSuppliersList] = useState(suppliers);
   const [pendingSupplier, setPendingSupplier] = useState<{ name: string; currency: string } | null>(null);
   const [creatingSupplier, setCreatingSupplier] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [confirmedDuplicate, setConfirmedDuplicate] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const isEditing = !!tx;
 
   const form = useForm<TransactionFormValues>({
@@ -71,6 +75,11 @@ export function TransactionForm({
     if (data.currency) form.setValue("currency", data.currency);
     if (data.date) form.setValue("date", new Date(data.date));
     if (data.category) form.setValue("category", data.category);
+    if (data.reference) {
+      const existing = form.getValues("notes");
+      const ref = `Ref: ${data.reference}`;
+      form.setValue("notes", existing ? `${existing}\n${ref}` : ref);
+    }
     if (data.supplierName) {
       const match = suppliersList.find(
         (s) => s.name.toLowerCase() === data.supplierName!.toLowerCase()
@@ -109,16 +118,45 @@ export function TransactionForm({
   };
 
   const onSubmit = (values: TransactionFormValues) => {
+    setSubmitError(null);
     startTransition(async () => {
-      if (isEditing && tx) {
-        await updateTransaction(tx.id, values);
-        router.push("/transactions");
-      } else {
+      try {
+        if (isEditing && tx) {
+          await updateTransaction(tx.id, values);
+          window.location.href = "/transactions";
+          return;
+        }
+
+        if (!confirmedDuplicate) {
+          const result = await checkDuplicate({
+            date: values.date,
+            amount: values.amount,
+            supplierId: values.supplierId,
+          });
+
+          if (result.duplicate) {
+            setDuplicateWarning(result.description ?? "Ukjent");
+            return;
+          }
+        }
+
         await createTransaction(values);
+        setDuplicateWarning(null);
+        setConfirmedDuplicate(false);
         onSuccess?.();
+        router.refresh();
+      } catch (err) {
+        setSubmitError(
+          err instanceof Error ? err.message : "Noe gikk galt. Prøv igjen."
+        );
       }
-      router.refresh();
     });
+  };
+
+  const handleConfirmDuplicate = () => {
+    setConfirmedDuplicate(true);
+    setDuplicateWarning(null);
+    form.handleSubmit(onSubmit)();
   };
 
   return (
@@ -143,7 +181,7 @@ export function TransactionForm({
           )}
         />
 
-        <AmountFields form={form} />
+        <AmountFields form={form} isEditing={isEditing} />
         {watchType === "EXPENSE" && (
           <ExpenseFields
             form={form}
@@ -181,6 +219,38 @@ export function TransactionForm({
               {creatingSupplier ? "Oppretter..." : "Opprett"}
             </Button>
           </div>
+        )}
+
+        {duplicateWarning && (
+          <div className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-950">
+            <p className="flex-1 text-sm">
+              Det finnes allerede en transaksjon med samme dato, beløp og leverandør ({duplicateWarning}). Er du sikker på at du vil opprette en ny?
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setDuplicateWarning(null);
+                setConfirmedDuplicate(false);
+              }}
+            >
+              Avbryt
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              onClick={handleConfirmDuplicate}
+              disabled={isPending}
+            >
+              {isPending ? "Lagrer..." : "Opprett likevel"}
+            </Button>
+          </div>
+        )}
+
+        {submitError && (
+          <p className="text-sm text-destructive">{submitError}</p>
         )}
 
         <Button type="submit" disabled={isPending} className="w-full">

@@ -81,13 +81,15 @@ export async function POST(request: NextRequest) {
   "currency": "NOK eller EUR eller USD",
   "date": "YYYY-MM-DD",
   "supplierName": "leverandørens navn",
-  "category": "f.eks. Kontor, Reise, Mat, Programvare, Utstyr"
+  "category": "f.eks. Kontor, Reise, Mat, Programvare, Utstyr",
+  "reference": "referansenummer, fakturanummer, ordrenummer eller KID-nummer hvis det finnes"
 }
 
 Regler:
 - amount skal være et tall uten valutasymbol
 - currency skal være en av: NOK, EUR, USD. Bruk NOK som standard hvis ukjent.
 - date skal være i ISO-format (YYYY-MM-DD)
+- reference skal inneholde referanse-/faktura-/ordre-/KID-nummer hvis det finnes i dokumentet, ellers null
 - Svar KUN med JSON-objektet, ingen annen tekst.`,
             },
           ],
