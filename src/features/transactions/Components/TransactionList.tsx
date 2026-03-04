@@ -9,6 +9,7 @@ import {
   getCoreRowModel,
   flexRender,
   type ColumnDef,
+  type RowSelectionState,
 } from "@tanstack/react-table";
 import type { TransactionWithSupplier } from "../Actions/getTransactions";
 import { formatCurrency, formatDate, getMvaCodeLabel } from "@/lib/format";
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { deleteTransaction } from "../Actions/deleteTransaction";
+import { deleteTransactions } from "../Actions/deleteTransactions";
 import { TransactionPagination } from "./TransactionPagination";
 
 type Props = {
@@ -51,8 +53,12 @@ type Props = {
 export function TransactionList({ transactions, total, page, pageSize }: Props) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [selectedTx, setSelectedTx] = useState<TransactionWithSupplier | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  const selectedCount = Object.keys(rowSelection).length;
 
   const handleDelete = () => {
     if (!deleteId) return;
@@ -63,8 +69,41 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
     });
   };
 
+  const handleBulkDelete = () => {
+    const ids = Object.keys(rowSelection).map(
+      (idx) => transactions[parseInt(idx)].id
+    );
+    startTransition(async () => {
+      await deleteTransactions(ids);
+      setRowSelection({});
+      setShowBulkDelete(false);
+      router.refresh();
+    });
+  };
+
   const columns = useMemo<ColumnDef<TransactionWithSupplier>[]>(
     () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border"
+            checked={table.getIsAllPageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+          />
+        ),
+        cell: ({ row }) => (
+          <div onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border"
+              checked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+            />
+          </div>
+        ),
+      },
       {
         accessorKey: "date",
         header: "Dato",
@@ -160,6 +199,8 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     rowCount: total,
+    state: { rowSelection },
+    onRowSelectionChange: setRowSelection,
     meta: { setDeleteId },
   });
 
@@ -173,6 +214,22 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
 
   return (
     <>
+      {selectedCount > 0 && (
+        <div className="flex items-center gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
+          <p className="flex-1 text-sm">
+            {selectedCount} transaksjon{selectedCount > 1 ? "er" : ""} valgt
+          </p>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowBulkDelete(true)}
+          >
+            <Trash2 className="mr-1 h-3 w-3" />
+            Slett valgte
+          </Button>
+        </div>
+      )}
+
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -192,6 +249,7 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
             <TableRow
               key={row.id}
               className="cursor-pointer"
+              data-state={row.getIsSelected() ? "selected" : undefined}
               onClick={() => setSelectedTx(row.original)}
             >
               {row.getVisibleCells().map((cell) => (
@@ -303,6 +361,27 @@ export function TransactionList({ transactions, total, page, pageSize }: Props) 
               disabled={isPending}
             >
               {isPending ? "Sletter..." : "Slett"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showBulkDelete} onOpenChange={() => setShowBulkDelete(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slett {selectedCount} transaksjon{selectedCount > 1 ? "er" : ""}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Er du sikker på at du vil slette {selectedCount} valgte transaksjon{selectedCount > 1 ? "er" : ""}? Denne handlingen kan ikke angres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isPending}
+            >
+              {isPending ? "Sletter..." : `Slett ${selectedCount}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
