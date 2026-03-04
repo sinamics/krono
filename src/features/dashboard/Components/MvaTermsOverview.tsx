@@ -1,9 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { TermData } from "@/features/dashboard/Actions/getDashboardData";
 import { Badge } from "@/components/ui/badge";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +18,62 @@ type MvaTermsOverviewProps = {
   year: number;
   currentTerm: number;
 };
+
+function MissingSuppliersBadge({
+  missingSuppliers,
+}: {
+  missingSuppliers: TermData["missingSuppliers"];
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (missingSuppliers.length === 0) return null;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          className="cursor-pointer"
+        >
+          <Badge
+            variant="outline"
+            className="bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 text-[11px] px-1.5 py-0"
+          >
+            {missingSuppliers.length} mangler
+          </Badge>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-56 p-3"
+        align="start"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <p className="text-xs font-medium mb-2 text-muted-foreground">
+          Leverandører fra forrige termin
+        </p>
+        <ul className="space-y-1">
+          {missingSuppliers.map((s) => (
+            <li key={s.id} className="text-sm">
+              {s.name}
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function StatusBadge({ status }: { status: TermData["status"] }) {
   switch (status) {
@@ -83,6 +145,9 @@ export function MvaTermsOverview({
                     {t.label}
                   </span>
                 </span>
+                <MissingSuppliersBadge
+                  missingSuppliers={t.missingSuppliers}
+                />
               </span>
               <span className="text-sm tabular-nums text-right text-green-600">
                 {formatCurrency(t.salesTotal)}
@@ -124,6 +189,9 @@ export function MvaTermsOverview({
                     <span className="size-1.5 rounded-full bg-primary shrink-0" />
                   )}
                   T{t.term} — {t.label}
+                  <MissingSuppliersBadge
+                    missingSuppliers={t.missingSuppliers}
+                  />
                 </span>
                 <StatusBadge status={t.status} />
               </div>

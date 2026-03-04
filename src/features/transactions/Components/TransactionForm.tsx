@@ -107,7 +107,7 @@ export function TransactionForm({
         type: isNorwegian ? "NORWEGIAN" : "FOREIGN",
       });
       setSuppliersList((prev) => [...prev, newSupplier]);
-      form.setValue("supplierId", newSupplier.id);
+      form.setValue("supplierId", newSupplier.id, { shouldDirty: true, shouldValidate: true });
       setPendingSupplier(null);
     } catch {
       // Let user create manually via the + button
