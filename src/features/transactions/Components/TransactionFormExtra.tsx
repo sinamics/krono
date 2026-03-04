@@ -40,7 +40,7 @@ export function ExpenseFields({
 
   const handleSupplierCreated = (newSupplier: supplier) => {
     setLocalSuppliers((prev) => [...prev, newSupplier]);
-    form.setValue("supplierId", newSupplier.id);
+    form.setValue("supplierId", newSupplier.id, { shouldDirty: true, shouldValidate: true });
     onSupplierCreated?.(newSupplier);
   };
 

@@ -16,6 +16,7 @@ export type TermData = {
   totalMva: number;
   salesTotal: number;
   expensesTotal: number;
+  missingSuppliers: { id: string; name: string }[];
 };
 
 export type YearToDateData = {
@@ -63,16 +64,21 @@ export const getDashboardData = withAuth(async (auth, year: number) => {
 
   // Build per-term data
   const allTerms: TermData[] = [];
+  const supplierSets: Map<number, Set<string>> = new Map();
+
   for (let term = 1; term <= 6; term++) {
     const termPeriod = `${year}-${term}`;
     const termTxs = allTransactions.filter((tx) => tx.termPeriod === termPeriod);
 
     let salesTotal = 0;
     let expensesTotal = 0;
+    const supplierIds = new Set<string>();
     for (const tx of termTxs) {
       if (tx.type === "SALE") salesTotal += tx.amountNOK;
       else expensesTotal += tx.amountNOK;
+      if (tx.supplierId) supplierIds.add(tx.supplierId);
     }
+    supplierSets.set(term, supplierIds);
 
     const mvaTerm = mvaTermMap.get(term);
     const deadline = getTermDeadline(year, term);
@@ -94,7 +100,41 @@ export const getDashboardData = withAuth(async (auth, year: number) => {
       totalMva: mvaTerm?.totalMva ?? 0,
       salesTotal,
       expensesTotal,
+      missingSuppliers: [],
     });
+  }
+
+  // Compute missing suppliers: for terms 2–6, find suppliers in prev term but not in current
+  const allMissingIds = new Set<string>();
+  for (let i = 1; i < allTerms.length; i++) {
+    if (allTerms[i].status === "SUBMITTED") continue;
+    const prevSet = supplierSets.get(i)!; // term i (1-indexed), index i-1
+    const currSet = supplierSets.get(i + 1)!;
+    const missing: string[] = [];
+    for (const id of prevSet) {
+      if (!currSet.has(id)) {
+        missing.push(id);
+        allMissingIds.add(id);
+      }
+    }
+    if (missing.length > 0) {
+      allTerms[i].missingSuppliers = missing.map((id) => ({ id, name: id }));
+    }
+  }
+
+  // Resolve supplier names in one query
+  if (allMissingIds.size > 0) {
+    const suppliers = await db.supplier.findMany({
+      where: { id: { in: [...allMissingIds] } },
+      select: { id: true, name: true },
+    });
+    const nameMap = new Map(suppliers.map((s) => [s.id, s.name]));
+    for (const t of allTerms) {
+      t.missingSuppliers = t.missingSuppliers.map((s) => ({
+        id: s.id,
+        name: nameMap.get(s.id) ?? s.id,
+      }));
+    }
   }
 
   // Year totals

@@ -5,6 +5,7 @@ import { calculateTerm } from "@/features/mva/Actions/calculateTerm";
 import { TermSelector } from "@/features/mva/Components/TermSelector";
 import { MvaMeldingPreview } from "@/features/mva/Components/MvaMeldingPreview";
 import { MvaTermOverview } from "@/features/mva/Components/MvaTermOverview";
+import { MissingSuppliers } from "@/features/mva/Components/MissingSuppliers";
 
 type PageProps = {
   searchParams: Promise<{ year?: string; term?: string }>;
@@ -32,6 +33,49 @@ export default async function MvaPage({ searchParams }: PageProps) {
     ? allTerms.filter((t) => t.term === selectedTerm)
     : allTerms;
 
+  // Compute missing suppliers when viewing a specific term (2–6)
+  let missingSuppliers: { id: string; name: string }[] = [];
+  if (selectedTerm && selectedTerm > 1) {
+    const prevTermPeriod = `${year}-${selectedTerm - 1}`;
+    const currTermPeriod = `${year}-${selectedTerm}`;
+
+    const [prevTxs, currTxs] = await Promise.all([
+      db.transaction.findMany({
+        where: {
+          userId: session.userId,
+          termPeriod: prevTermPeriod,
+          deletedAt: null,
+          supplierId: { not: null },
+        },
+        select: { supplierId: true },
+        distinct: ["supplierId"],
+      }),
+      db.transaction.findMany({
+        where: {
+          userId: session.userId,
+          termPeriod: currTermPeriod,
+          deletedAt: null,
+          supplierId: { not: null },
+        },
+        select: { supplierId: true },
+        distinct: ["supplierId"],
+      }),
+    ]);
+
+    const currSupplierIds = new Set(currTxs.map((tx) => tx.supplierId!));
+    const missingIds = prevTxs
+      .map((tx) => tx.supplierId!)
+      .filter((id) => !currSupplierIds.has(id));
+
+    if (missingIds.length > 0) {
+      const suppliers = await db.supplier.findMany({
+        where: { id: { in: missingIds } },
+        select: { id: true, name: true },
+      });
+      missingSuppliers = suppliers;
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -42,6 +86,13 @@ export default async function MvaPage({ searchParams }: PageProps) {
       </div>
 
       <TermSelector currentYear={year} currentTerm={selectedTerm} />
+
+      {missingSuppliers.length > 0 && (
+        <MissingSuppliers
+          suppliers={missingSuppliers}
+          prevTerm={selectedTerm! - 1}
+        />
+      )}
 
       <MvaTermOverview terms={displayTerms} />
 
