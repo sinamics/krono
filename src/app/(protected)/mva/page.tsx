@@ -100,6 +100,7 @@ export default async function MvaPage({ searchParams }: PageProps) {
         <MvaMeldingPreview
           termData={result.mvaTerm}
           transactions={result.transactions}
+          missingSuppliers={missingSuppliers}
         />
       )}
     </div>

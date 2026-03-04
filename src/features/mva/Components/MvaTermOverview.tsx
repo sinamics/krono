@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { mvaTerm } from "@/generated/db/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,26 +40,17 @@ export function MvaTermOverview({ terms }: MvaTermOverviewProps) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
       {terms.map((term) => (
-        <Card key={term.id} className={getTermColor(term)}>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">
-                Termin {term.term} ({formatTermLabel(term.term)})
-              </CardTitle>
+        <Link key={term.id} href={`/mva?year=${term.year}&term=${term.term}`}>
+          <Card className={`${getTermColor(term)} transition-colors hover:bg-accent/50 cursor-pointer`}>
+            <div className="flex items-center justify-between gap-2 px-2.5 py-1.5">
+              <span className="text-xs font-medium">Termin {term.term}</span>
+              <span className="text-xs tabular-nums">{formatCurrency(term.totalMva)}</span>
               {getStatusBadge(term)}
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">
-              {formatCurrency(term.totalMva)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Frist: {formatDate(term.deadline)}
-            </p>
-          </CardContent>
-        </Card>
+          </Card>
+        </Link>
       ))}
     </div>
   );

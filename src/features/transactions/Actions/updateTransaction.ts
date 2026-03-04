@@ -5,12 +5,17 @@ import { withAuth } from "@/lib/withAuth";
 import { transactionSchema } from "../Schema/transactionSchema";
 import { determineMvaCode, getTermPeriod, calculateAmountNOK } from "@/lib/tax-calculations";
 import { logAudit, diffTransaction, AUDITED_FIELDS } from "@/lib/audit";
+import { isTermLocked } from "@/lib/term-lock";
 
 export const updateTransaction = withAuth(
   async (auth, id: string, formData: unknown) => {
     const existing = await db.transaction.findUnique({ where: { id } });
     if (!existing || existing.userId !== auth.userId) {
       throw new Error("Transaksjon ikke funnet.");
+    }
+
+    if (await isTermLocked(auth.userId, existing.termPeriod)) {
+      throw new Error("Denne terminen er levert. Transaksjonen kan ikke endres.");
     }
 
     const data = transactionSchema.parse(formData);

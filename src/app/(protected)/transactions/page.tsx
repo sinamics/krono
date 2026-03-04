@@ -7,6 +7,7 @@ import { getTransactions } from "@/features/transactions/Actions/getTransactions
 import { TransactionFilters } from "@/features/transactions/Components/TransactionFilters";
 import { TransactionList } from "@/features/transactions/Components/TransactionList";
 import { NewTransactionDialog } from "@/features/transactions/Components/NewTransactionDialog";
+import { getLockedTermPeriods } from "@/lib/term-lock";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -42,10 +43,13 @@ export default async function TransactionsPage({ searchParams }: Props) {
     page,
   });
 
-  const suppliers = await db.supplier.findMany({
-    where: { userId: session.userId },
-    orderBy: { name: "asc" },
-  });
+  const [suppliers, lockedTermPeriods] = await Promise.all([
+    db.supplier.findMany({
+      where: { userId: session.userId },
+      orderBy: { name: "asc" },
+    }),
+    getLockedTermPeriods(session.userId),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -67,6 +71,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
         total={result.total}
         page={result.page}
         pageSize={result.pageSize}
+        lockedTermPeriods={[...lockedTermPeriods]}
       />
     </div>
   );
