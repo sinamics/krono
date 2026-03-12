@@ -40,14 +40,19 @@ import {
   UserCog,
 } from "lucide-react";
 
-const navItems = [
+const mainItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+];
+
+const accountingItems = [
   { title: "Transaksjoner", href: "/transactions", icon: ArrowLeftRight },
+  { title: "Leverandører", href: "/suppliers", icon: Building2 },
   { title: "MVA-melding", href: "/mva", icon: FileText },
+];
+
+const reportItems = [
   { title: "Rapporter", href: "/reports", icon: BarChart3 },
   { title: "Årsoppgjør", href: "/arsoppgjor", icon: FileSpreadsheet },
-  { title: "Leverandører", href: "/suppliers", icon: Building2 },
-  { title: "Innstillinger", href: "/settings", icon: Settings },
 ];
 
 type Props = React.ComponentProps<typeof Sidebar> & {
@@ -96,10 +101,9 @@ export function AppSidebar({ user, ...props }: Props) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Meny</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
@@ -112,6 +116,63 @@ export function AppSidebar({ user, ...props }: Props) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Regnskap</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {accountingItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith(item.href)}
+                  >
+                    <Link href={item.href} className="font-medium">
+                      <item.icon className="size-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Rapportering</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {reportItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith(item.href)}
+                  >
+                    <Link href={item.href} className="font-medium">
+                      <item.icon className="size-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/settings")}
+                >
+                  <Link href="/settings" className="font-medium">
+                    <Settings className="size-4" />
+                    <span>Innstillinger</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
