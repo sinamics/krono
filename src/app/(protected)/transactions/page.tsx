@@ -58,8 +58,8 @@ export default async function TransactionsPage({ searchParams }: Props) {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex min-h-0 flex-1 flex-col gap-6">
+      <div className="flex shrink-0 items-center justify-between">
         <h1 className="text-2xl font-bold">Transaksjoner</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
@@ -77,14 +77,18 @@ export default async function TransactionsPage({ searchParams }: Props) {
           <NewTransactionDialog suppliers={suppliers} />
         </div>
       </div>
-      <TransactionFilters suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))} />
-      <TransactionList
-        transactions={result.data}
-        total={result.total}
-        page={result.page}
-        pageSize={result.pageSize}
-        lockedTermPeriods={[...lockedTermPeriods]}
-      />
+      <div className="shrink-0">
+        <TransactionFilters suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))} />
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <TransactionList
+          transactions={result.data}
+          total={result.total}
+          page={result.page}
+          pageSize={result.pageSize}
+          lockedTermPeriods={[...lockedTermPeriods]}
+        />
+      </div>
     </div>
   );
 }
