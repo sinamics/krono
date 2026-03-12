@@ -182,6 +182,7 @@ export const syncPaypalTransactions = withAuth(
     let imported = 0;
     let skipped = 0;
     const errors: string[] = [];
+    let nextBilagsnummer = await getNextBilagsnummer(auth.userId);
 
     for (const tx of validTransactions) {
       const info = tx.transaction_info;
@@ -222,7 +223,7 @@ export const syncPaypalTransactions = withAuth(
         const operations = [];
 
         if (!existingIds.has(saleId)) {
-          const bilagsnummer = await getNextBilagsnummer(auth.userId);
+          const bilagsnummer = nextBilagsnummer++;
           operations.push(
             db.transaction.create({
               data: {
@@ -244,7 +245,7 @@ export const syncPaypalTransactions = withAuth(
         }
 
         if (!existingIds.has(feeId) && feeValue > 0) {
-          const bilagsnummer = await getNextBilagsnummer(auth.userId);
+          const bilagsnummer = nextBilagsnummer++;
           operations.push(
             db.transaction.create({
               data: {
