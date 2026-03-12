@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Trash2, FileUp } from "lucide-react";
 import { getSession } from "@/lib/withAuth";
 import { db } from "@/lib/db";
 import { getTransactions } from "@/features/transactions/Actions/getTransactions";
@@ -18,6 +18,9 @@ type Props = {
     mvaCode?: string;
     search?: string;
     source?: string;
+    supplierId?: string;
+    sortBy?: string;
+    sortOrder?: string;
     page?: string;
   }>;
 };
@@ -39,6 +42,9 @@ export default async function TransactionsPage({ searchParams }: Props) {
     mvaCode: params.mvaCode,
     search: params.search,
     source: params.source,
+    supplierId: params.supplierId,
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder as "asc" | "desc" | undefined,
     year: termPeriod ? undefined : year,
     page,
   });
@@ -57,6 +63,12 @@ export default async function TransactionsPage({ searchParams }: Props) {
         <h1 className="text-2xl font-bold">Transaksjoner</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
+            <Link href="/transactions/import">
+              <FileUp className="mr-1 h-4 w-4" />
+              Importer faktura
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
             <Link href="/transactions/trash">
               <Trash2 className="mr-1 h-4 w-4" />
               Papirkurv
@@ -65,7 +77,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
           <NewTransactionDialog suppliers={suppliers} />
         </div>
       </div>
-      <TransactionFilters />
+      <TransactionFilters suppliers={suppliers.map((s) => ({ id: s.id, name: s.name }))} />
       <TransactionList
         transactions={result.data}
         total={result.total}

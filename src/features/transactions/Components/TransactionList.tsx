@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2, Pencil, Paperclip, Lock } from "lucide-react";
+import { Trash2, Pencil, Paperclip, Lock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,6 +11,7 @@ import {
   type ColumnDef,
   type RowSelectionState,
 } from "@tanstack/react-table";
+import { useRouter as useNextRouter, useSearchParams } from "next/navigation";
 import type { TransactionWithSupplier } from "../Actions/getTransactions";
 import { formatCurrency, formatDate, getMvaCodeLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,41 @@ import { deleteTransactions } from "../Actions/deleteTransactions";
 import { TransactionPagination } from "./TransactionPagination";
 import { AuditLog } from "./AuditLog";
 
+function SortableHeader({
+  label,
+  field,
+  currentSort,
+  currentOrder,
+  onSort,
+  className,
+}: {
+  label: string;
+  field: string;
+  currentSort: string;
+  currentOrder: string;
+  onSort: (field: string) => void;
+  className?: string;
+}) {
+  const isActive = currentSort === field;
+  return (
+    <button
+      className={`flex items-center gap-1 hover:text-foreground ${className ?? ""}`}
+      onClick={() => onSort(field)}
+    >
+      {label}
+      {isActive ? (
+        currentOrder === "asc" ? (
+          <ArrowUp className="h-3 w-3" />
+        ) : (
+          <ArrowDown className="h-3 w-3" />
+        )
+      ) : (
+        <ArrowUpDown className="h-3 w-3 opacity-30" />
+      )}
+    </button>
+  );
+}
+
 type Props = {
   transactions: TransactionWithSupplier[];
   total: number;
@@ -55,6 +91,26 @@ type Props = {
 export function TransactionList({ transactions, total, page, pageSize, lockedTermPeriods = [] }: Props) {
   const lockedSet = useMemo(() => new Set(lockedTermPeriods), [lockedTermPeriods]);
   const router = useRouter();
+  const navRouter = useNextRouter();
+  const searchParams = useSearchParams();
+  const currentSort = searchParams.get("sortBy") ?? "date";
+  const currentOrder = searchParams.get("sortOrder") ?? "desc";
+
+  const handleSort = useCallback(
+    (field: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (currentSort === field) {
+        params.set("sortOrder", currentOrder === "asc" ? "desc" : "asc");
+      } else {
+        params.set("sortBy", field);
+        params.set("sortOrder", "desc");
+      }
+      params.delete("page");
+      navRouter.push(`/transactions?${params.toString()}`);
+    },
+    [searchParams, currentSort, currentOrder, navRouter]
+  );
+
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [selectedTx, setSelectedTx] = useState<TransactionWithSupplier | null>(null);
@@ -114,7 +170,15 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
       },
       {
         accessorKey: "bilagsnummer",
-        header: "Bilag",
+        header: () => (
+          <SortableHeader
+            label="Bilag"
+            field="bilagsnummer"
+            currentSort={currentSort}
+            currentOrder={currentOrder}
+            onSort={handleSort}
+          />
+        ),
         cell: ({ row }) => (
           <span className="font-mono text-muted-foreground">
             {row.original.bilagsnummer ?? "—"}
@@ -123,12 +187,28 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
       },
       {
         accessorKey: "date",
-        header: "Dato",
+        header: () => (
+          <SortableHeader
+            label="Dato"
+            field="date"
+            currentSort={currentSort}
+            currentOrder={currentOrder}
+            onSort={handleSort}
+          />
+        ),
         cell: ({ row }) => formatDate(row.original.date),
       },
       {
         accessorKey: "description",
-        header: "Beskrivelse",
+        header: () => (
+          <SortableHeader
+            label="Beskrivelse"
+            field="description"
+            currentSort={currentSort}
+            currentOrder={currentOrder}
+            onSort={handleSort}
+          />
+        ),
         cell: ({ row }) => (
           <span className="max-w-[200px] truncate block">
             {row.original.description}
@@ -137,7 +217,15 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
       },
       {
         accessorKey: "type",
-        header: "Type",
+        header: () => (
+          <SortableHeader
+            label="Type"
+            field="type"
+            currentSort={currentSort}
+            currentOrder={currentOrder}
+            onSort={handleSort}
+          />
+        ),
         cell: ({ row }) => (
           <Badge variant={row.original.type === "SALE" ? "default" : "secondary"}>
             {row.original.type === "SALE" ? "Salg" : "Utgift"}
@@ -146,7 +234,16 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
       },
       {
         accessorKey: "amountNOK",
-        header: () => <span className="flex justify-end">Beløp</span>,
+        header: () => (
+          <SortableHeader
+            label="Beløp"
+            field="amountNOK"
+            currentSort={currentSort}
+            currentOrder={currentOrder}
+            onSort={handleSort}
+            className="justify-end"
+          />
+        ),
         cell: ({ row }) => (
           <span className="text-right block">
             {formatCurrency(row.original.amountNOK)}
@@ -155,7 +252,15 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
       },
       {
         accessorKey: "mvaCode",
-        header: "MVA-kode",
+        header: () => (
+          <SortableHeader
+            label="MVA-kode"
+            field="mvaCode"
+            currentSort={currentSort}
+            currentOrder={currentOrder}
+            onSort={handleSort}
+          />
+        ),
         cell: ({ row }) => getMvaCodeLabel(row.original.mvaCode),
       },
       {
@@ -217,7 +322,7 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
         },
       },
     ],
-    []
+    [currentSort, currentOrder, handleSort]
   );
 
   const table = useReactTable({

@@ -20,6 +20,9 @@ type TransactionFilters = {
   search?: string;
   year?: string;
   source?: string;
+  supplierId?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 };
@@ -69,6 +72,10 @@ export async function getTransactions(filters: TransactionFilters): Promise<Pagi
     }
   }
 
+  if (filters.supplierId && filters.supplierId !== "ALL") {
+    where.supplierId = filters.supplierId;
+  }
+
   if (filters.source === "manual") {
     where.externalId = null;
   } else if (filters.source === "stripe") {
@@ -83,11 +90,18 @@ export async function getTransactions(filters: TransactionFilters): Promise<Pagi
     ];
   }
 
+  const sortableFields = ["date", "description", "amountNOK", "bilagsnummer", "type", "mvaCode"] as const;
+  type SortableField = (typeof sortableFields)[number];
+  const sortBy = sortableFields.includes(filters.sortBy as SortableField)
+    ? (filters.sortBy as SortableField)
+    : "date";
+  const sortOrder = filters.sortOrder === "asc" ? "asc" : "desc";
+
   const [data, total] = await Promise.all([
     db.transaction.findMany({
       where,
       include: { supplier: true },
-      orderBy: { date: "desc" },
+      orderBy: { [sortBy]: sortOrder },
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

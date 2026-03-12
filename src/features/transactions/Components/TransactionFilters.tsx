@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,6 +10,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Check, ChevronsUpDown } from "lucide-react";
+
+type Supplier = {
+  id: string;
+  name: string;
+};
+
+type Props = {
+  suppliers: Supplier[];
+};
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -22,9 +38,12 @@ const terms = [
   { value: "6", label: "Termin 6 (Nov-Des)" },
 ];
 
-export function TransactionFilters() {
+export function TransactionFilters({ suppliers }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [supplierOpen, setSupplierOpen] = useState(false);
+  const [supplierSearch, setSupplierSearch] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const updateParam = useCallback(
     (key: string, value: string) => {
@@ -39,6 +58,24 @@ export function TransactionFilters() {
     },
     [router, searchParams]
   );
+
+  const selectedSupplierId = searchParams.get("supplierId");
+  const selectedSupplier = suppliers.find((s) => s.id === selectedSupplierId);
+
+  const filteredSuppliers = supplierSearch
+    ? suppliers.filter((s) =>
+        s.name.toLowerCase().includes(supplierSearch.toLowerCase())
+      )
+    : suppliers;
+
+  // Focus search input when popover opens
+  useEffect(() => {
+    if (supplierOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 0);
+    } else {
+      setSupplierSearch("");
+    }
+  }, [supplierOpen]);
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -118,6 +155,68 @@ export function TransactionFilters() {
           <SelectItem value="paypal">PayPal</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Supplier filter with search */}
+      <Popover open={supplierOpen} onOpenChange={setSupplierOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={supplierOpen}
+            className="w-[200px] justify-between font-normal"
+          >
+            <span className="truncate">
+              {selectedSupplier ? selectedSupplier.name : "Alle leverandører"}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px] p-0" align="start">
+          <div className="p-2">
+            <Input
+              ref={searchInputRef}
+              placeholder="Søk leverandør..."
+              value={supplierSearch}
+              onChange={(e) => setSupplierSearch(e.target.value)}
+              className="h-8"
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            <button
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent"
+              onClick={() => {
+                updateParam("supplierId", "ALL");
+                setSupplierOpen(false);
+              }}
+            >
+              <Check
+                className={`h-4 w-4 ${!selectedSupplierId ? "opacity-100" : "opacity-0"}`}
+              />
+              Alle leverandører
+            </button>
+            {filteredSuppliers.map((s) => (
+              <button
+                key={s.id}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent"
+                onClick={() => {
+                  updateParam("supplierId", s.id);
+                  setSupplierOpen(false);
+                }}
+              >
+                <Check
+                  className={`h-4 w-4 ${selectedSupplierId === s.id ? "opacity-100" : "opacity-0"}`}
+                />
+                <span className="truncate">{s.name}</span>
+              </button>
+            ))}
+            {filteredSuppliers.length === 0 && (
+              <p className="px-3 py-2 text-sm text-muted-foreground">
+                Ingen treff
+              </p>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       <Input
         placeholder="Søk beskrivelse, leverandør, beløp..."
