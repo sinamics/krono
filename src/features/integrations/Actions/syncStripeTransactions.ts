@@ -90,6 +90,7 @@ export const syncStripeTransactions = withAuth(
     let imported = 0;
     let skipped = 0;
     const errors: string[] = [];
+    let nextBilagsnummer = await getNextBilagsnummer(auth.userId);
 
     for (const charge of validCharges) {
       const saleId = charge.id;
@@ -121,7 +122,7 @@ export const syncStripeTransactions = withAuth(
         const operations = [];
 
         if (!existingIds.has(saleId)) {
-          const bilagsnummer = await getNextBilagsnummer(auth.userId);
+          const bilagsnummer = nextBilagsnummer++;
           operations.push(
             db.transaction.create({
               data: {
@@ -143,7 +144,7 @@ export const syncStripeTransactions = withAuth(
         }
 
         if (!existingIds.has(feeId) && feeAmount > 0) {
-          const bilagsnummer = await getNextBilagsnummer(auth.userId);
+          const bilagsnummer = nextBilagsnummer++;
           operations.push(
             db.transaction.create({
               data: {

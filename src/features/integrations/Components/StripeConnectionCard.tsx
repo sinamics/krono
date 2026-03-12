@@ -3,7 +3,7 @@
 import { useTransition, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format, subMonths } from "date-fns";
+import { format, subMonths, startOfYear, endOfYear, subYears } from "date-fns";
 import { nb } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import {
@@ -76,6 +76,12 @@ export function StripeConnectionCard({ integration }: Props) {
     const now = new Date();
     syncForm.setValue("from", subMonths(now, months));
     syncForm.setValue("to", now);
+  }
+
+  function setYearRange(year: "this" | "last") {
+    const ref = year === "last" ? subYears(new Date(), 1) : new Date();
+    syncForm.setValue("from", startOfYear(ref));
+    syncForm.setValue("to", year === "last" ? endOfYear(ref) : new Date());
   }
 
   function onConnect(data: StripeKeyFormData) {
@@ -179,6 +185,15 @@ export function StripeConnectionCard({ integration }: Props) {
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => setRange(6)}>
                       6 mnd
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setRange(12)}>
+                      12 mnd
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setYearRange("this")}>
+                      I år
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setYearRange("last")}>
+                      I fjor
                     </Button>
                   </div>
                   <div className="flex gap-4">
