@@ -17,3 +17,22 @@ export const transactionSchema = z.object({
 });
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>;
+
+export const bulkTransactionItemSchema = z.object({
+  date: z.coerce.date(),
+  description: z.string().min(1, "Beskrivelse er påkrevd"),
+  amount: z.coerce.number().positive("Beløp må være positivt"),
+  currency: z.enum(["NOK", "EUR", "USD"]),
+  exchangeRate: z.coerce.number().positive("Kurs må være positiv").default(1),
+  type: z.enum(["SALE", "EXPENSE"]).default("EXPENSE"),
+  supplierId: z.string().optional(),
+  supplierName: z.string().optional(),
+  category: z.string().optional(),
+  receiptUrl: z.string().optional(),
+});
+
+export type BulkTransactionItem = z.infer<typeof bulkTransactionItemSchema>;
+
+export const bulkTransactionSchema = z.object({
+  items: z.array(bulkTransactionItemSchema).min(1, "Minst én transaksjon kreves"),
+});
