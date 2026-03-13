@@ -323,7 +323,7 @@ export function BulkImportWizard({ suppliers }: Props) {
               />
             </div>
           </div>
-          <div className="max-h-80 space-y-1 overflow-y-auto">
+          <div className="space-y-1">
             {fileStatuses.map((fs, i) => (
               <div
                 key={i}
