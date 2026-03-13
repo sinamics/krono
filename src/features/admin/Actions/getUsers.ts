@@ -60,7 +60,12 @@ export async function getUsers(filters: UserFilters): Promise<PaginatedUsers> {
         createdAt: true,
         memberships: {
           select: {
-            organization: { select: { name: true } },
+            organization: {
+              select: {
+                name: true,
+                settings: { select: { businessName: true } },
+              },
+            },
           },
           take: 1,
         },
@@ -78,7 +83,7 @@ export async function getUsers(filters: UserFilters): Promise<PaginatedUsers> {
     email: u.email,
     role: u.role,
     createdAt: u.createdAt,
-    organizationName: u.memberships[0]?.organization.name ?? null,
+    organizationName: u.memberships[0]?.organization.settings?.businessName ?? u.memberships[0]?.organization.name ?? null,
   }));
 
   return { data, total, page, pageSize };
