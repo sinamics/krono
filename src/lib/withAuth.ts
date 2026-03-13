@@ -19,13 +19,29 @@ export async function getSession(): Promise<AuthResult | null> {
   }
 
   // Find the user's organization membership
-  const membership = await db.organizationMember.findFirst({
+  let membership = await db.organizationMember.findFirst({
     where: { userId: session.user.id },
     include: { organization: true },
   });
 
+  // Auto-create organization if user has none (e.g. hook failed or pre-migration user)
   if (!membership) {
-    return null;
+    try {
+      const org = await db.organization.create({
+        data: { name: session.user.name || "Min bedrift" },
+      });
+      membership = await db.organizationMember.create({
+        data: {
+          organizationId: org.id,
+          userId: session.user.id,
+          role: "owner",
+        },
+        include: { organization: true },
+      });
+    } catch (err) {
+      console.error("[auth] Failed to auto-create organization:", err);
+      return null;
+    }
   }
 
   // Fetch user role from db (super_admin etc)

@@ -51,13 +51,22 @@ export function RegisterForm() {
       });
 
       if (result.error) {
-        setError(result.error.message ?? "Registrering feilet. Prøv igjen.");
+        const msg = result.error.message ?? "";
+        if (msg.includes("deaktivert")) {
+          setError("Registrering er deaktivert av administrator.");
+        } else if (msg.includes("already") || msg.includes("exists") || msg.includes("duplicate")) {
+          setError("En bruker med denne e-posten finnes allerede.");
+        } else {
+          setError(msg || "Registrering feilet. Prøv igjen.");
+        }
         setLoading(false);
         return;
       }
 
       router.push("/dashboard");
-    } catch {
+      router.refresh();
+    } catch (err) {
+      console.error("[register]", err);
       setError("Kunne ikke koble til serveren. Sjekk at databasen er satt opp.");
       setLoading(false);
     }
