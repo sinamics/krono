@@ -9,9 +9,8 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from "lucide-react";
-import type { UserWithOrg } from "../Actions/getUsers";
-import { deleteUser } from "../Actions/adminActions";
-import { Badge } from "@/components/ui/badge";
+import type { OrgWithStats } from "../Actions/adminActions";
+import { deleteOrganization } from "../Actions/adminActions";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -66,19 +65,19 @@ function SortableHeader({
 }
 
 type Props = {
-  users: UserWithOrg[];
+  organizations: OrgWithStats[];
   total: number;
   page: number;
   pageSize: number;
-  currentUserId: string;
+  currentOrgId: string;
 };
 
-export function UserTable({ users, total, page, pageSize, currentUserId }: Props) {
+export function OrgTable({ organizations, total, page, pageSize, currentOrgId }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentSort = searchParams.get("sortBy") ?? "createdAt";
   const currentOrder = searchParams.get("sortOrder") ?? "desc";
-  const [deleteTarget, setDeleteTarget] = useState<UserWithOrg | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<OrgWithStats | null>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +91,7 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
         params.set("sortOrder", "desc");
       }
       params.delete("page");
-      router.push(`/admin/users?${params.toString()}`);
+      router.push(`/admin/organizations?${params.toString()}`);
     },
     [searchParams, currentSort, currentOrder, router]
   );
@@ -105,7 +104,7 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
       } else {
         params.set("page", String(newPage));
       }
-      router.push(`/admin/users?${params.toString()}`);
+      router.push(`/admin/organizations?${params.toString()}`);
     },
     [router, searchParams]
   );
@@ -115,16 +114,16 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
     setError(null);
     startTransition(async () => {
       try {
-        await deleteUser(deleteTarget.id);
+        await deleteOrganization(deleteTarget.id);
         setDeleteTarget(null);
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Kunne ikke slette bruker.");
+        setError(err instanceof Error ? err.message : "Kunne ikke slette organisasjon.");
       }
     });
   }
 
-  const columns: ColumnDef<UserWithOrg>[] = [
+  const columns: ColumnDef<OrgWithStats>[] = [
     {
       accessorKey: "name",
       header: () => (
@@ -141,44 +140,20 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
       ),
     },
     {
-      accessorKey: "email",
-      header: () => (
-        <SortableHeader
-          label="E-post"
-          field="email"
-          currentSort={currentSort}
-          currentOrder={currentOrder}
-          onSort={handleSort}
-        />
-      ),
+      accessorKey: "memberCount",
+      header: "Medlemmer",
+      cell: ({ row }) => row.original.memberCount,
     },
     {
-      accessorKey: "role",
-      header: () => (
-        <SortableHeader
-          label="Rolle"
-          field="role"
-          currentSort={currentSort}
-          currentOrder={currentOrder}
-          onSort={handleSort}
-        />
-      ),
-      cell: ({ row }) => (
-        <Badge variant={row.original.role === "super_admin" ? "default" : "secondary"}>
-          {row.original.role === "super_admin" ? "Super Admin" : "Bruker"}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "organizationName",
-      header: "Organisasjon",
-      cell: ({ row }) => row.original.organizationName ?? "-",
+      accessorKey: "transactionCount",
+      header: "Transaksjoner",
+      cell: ({ row }) => row.original.transactionCount,
     },
     {
       accessorKey: "createdAt",
       header: () => (
         <SortableHeader
-          label="Registrert"
+          label="Opprettet"
           field="createdAt"
           currentSort={currentSort}
           currentOrder={currentOrder}
@@ -195,13 +170,13 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
       id: "actions",
       header: "",
       cell: ({ row }) => {
-        const user = row.original;
-        if (user.id === currentUserId) return null;
+        const org = row.original;
+        if (org.id === currentOrgId) return null;
         return (
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setDeleteTarget(user)}
+            onClick={() => setDeleteTarget(org)}
           >
             <Trash2 className="size-4 text-destructive" />
           </Button>
@@ -211,7 +186,7 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
   ];
 
   const table = useReactTable({
-    data: users,
+    data: organizations,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -243,7 +218,7 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
           {table.getRowModel().rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                Ingen brukere funnet.
+                Ingen organisasjoner funnet.
               </TableCell>
             </TableRow>
           ) : (
@@ -263,7 +238,7 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Viser {from}–{to} av {total} brukere
+            Viser {from}–{to} av {total} organisasjoner
           </p>
           <div className="flex gap-2">
             <Button
@@ -289,10 +264,10 @@ export function UserTable({ users, total, page, pageSize, currentUserId }: Props
       <AlertDialog open={!!deleteTarget} onOpenChange={() => { setDeleteTarget(null); setError(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Slett bruker?</AlertDialogTitle>
+            <AlertDialogTitle>Slett organisasjon?</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{deleteTarget?.name}</strong> ({deleteTarget?.email}) vil bli permanent slettet.
-              Organisasjoner der brukeren er eneste medlem slettes også med all data.
+              <strong>{deleteTarget?.name}</strong> med {deleteTarget?.transactionCount ?? 0} transaksjoner
+              og {deleteTarget?.memberCount ?? 0} medlemmer vil bli permanent slettet. Denne handlingen kan ikke angres.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {error && <p className="text-sm text-destructive">{error}</p>}
