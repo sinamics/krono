@@ -38,6 +38,7 @@ import {
   Moon,
   Sun,
   UserCog,
+  ShieldCheck,
 } from "lucide-react";
 
 const mainItems = [
@@ -56,7 +57,7 @@ const reportItems = [
 ];
 
 type Props = React.ComponentProps<typeof Sidebar> & {
-  user?: { name: string; email: string };
+  user?: { name: string; email: string; role: string };
   businessName?: string;
 };
 
@@ -174,6 +175,19 @@ export function AppSidebar({ user, businessName, ...props }: Props) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {user?.role === "super_admin" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/admin")}
+                  >
+                    <Link href="/admin" className="font-medium">
+                      <ShieldCheck className="size-4" />
+                      <span>Super Admin</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

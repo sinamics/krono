@@ -26,7 +26,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export function LoginForm() {
+type Props = {
+  registrationEnabled?: boolean;
+};
+
+export function LoginForm({ registrationEnabled = true }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,13 +51,22 @@ export function LoginForm() {
       });
 
       if (result.error) {
-        setError(result.error.message ?? "Innlogging feilet. Prøv igjen.");
+        const msg = result.error.message ?? "";
+        if (msg.includes("Invalid") || msg.includes("invalid") || msg.includes("credentials")) {
+          setError("Feil e-post eller passord.");
+        } else if (msg.includes("not found") || msg.includes("No user")) {
+          setError("Ingen bruker med denne e-posten.");
+        } else {
+          setError(msg || "Innlogging feilet. Prøv igjen.");
+        }
         setLoading(false);
         return;
       }
 
       router.push("/dashboard");
-    } catch {
+      router.refresh();
+    } catch (err) {
+      console.error("[login]", err);
       setError("Kunne ikke koble til serveren. Sjekk at databasen er satt opp.");
       setLoading(false);
     }
@@ -113,14 +126,16 @@ export function LoginForm() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="justify-center">
-        <p className="text-sm text-muted-foreground">
-          Har du ikke en konto?{" "}
-          <Link href="/sign-up" className="text-primary underline">
-            Opprett konto
-          </Link>
-        </p>
-      </CardFooter>
+      {registrationEnabled && (
+        <CardFooter className="justify-center">
+          <p className="text-sm text-muted-foreground">
+            Har du ikke en konto?{" "}
+            <Link href="/sign-up" className="text-primary underline">
+              Opprett konto
+            </Link>
+          </p>
+        </CardFooter>
+      )}
     </Card>
   );
 }

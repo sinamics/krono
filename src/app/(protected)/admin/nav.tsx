@@ -5,22 +5,17 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/settings", label: "Bedriftsinformasjon" },
-  { href: "/settings/members", label: "Medlemmer" },
-  { href: "/settings/ekom", label: "EKOM" },
-  { href: "/settings/profile", label: "Profil" },
-  { href: "/settings/integrations", label: "Integrasjoner" },
-  { href: "/settings/backup", label: "Backup" },
+  { href: "/admin", label: "Generelt" },
+  { href: "/admin/users", label: "Brukere" },
 ];
 
-export function SettingsNav() {
+export function AdminNav() {
   const pathname = usePathname();
-  const items = navItems;
 
   return (
     <nav className="w-48 shrink-0">
       <ul className="space-y-1">
-        {items.map((item) => (
+        {navItems.map((item) => (
           <li key={item.href}>
             <Link
               href={item.href}

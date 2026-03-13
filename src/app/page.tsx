@@ -4,10 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Hero } from "@/features/landing/Components/Hero";
 import { Features } from "@/features/landing/Components/Features";
 import { getSession } from "@/lib/withAuth";
+import { db } from "@/lib/db";
 
 export default async function LandingPage() {
   const session = await getSession();
   if (session) redirect("/dashboard");
+
+  const regSetting = await db.appSettings.findUnique({
+    where: { key: "registration_enabled" },
+  });
+  const registrationEnabled = regSetting?.value !== "false";
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
@@ -17,9 +24,11 @@ export default async function LandingPage() {
             <Button variant="ghost" asChild>
               <Link href="/sign-in">Logg inn</Link>
             </Button>
-            <Button asChild>
-              <Link href="/sign-up">Opprett konto</Link>
-            </Button>
+            {registrationEnabled && (
+              <Button asChild>
+                <Link href="/sign-up">Opprett konto</Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
