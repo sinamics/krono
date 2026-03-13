@@ -124,12 +124,17 @@ function TransactionRows({ transactions }: { transactions: transaction[] }) {
   return (
     <>
       {transactions.map((tx) => (
-        <TableRow key={tx.id} className="bg-muted/30 text-sm">
+        <TableRow
+          key={tx.id}
+          className="bg-muted/30 text-sm cursor-pointer hover:bg-muted/60"
+          onClick={() => window.open(`/transactions/${tx.id}`, "_blank")}
+        >
           <TableCell className="pl-9 py-1.5">
             <span className="text-muted-foreground mr-2">
               {formatDate(tx.date)}
             </span>
             {tx.description}
+            <ExternalLink className="ml-1.5 inline size-3 text-muted-foreground" />
           </TableCell>
           <TableCell className="text-right py-1.5">
             {formatCurrency(tx.amountNOK)}

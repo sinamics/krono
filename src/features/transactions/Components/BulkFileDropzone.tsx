@@ -76,7 +76,7 @@ export function BulkFileDropzone({ files, onChange }: Props) {
           <p className="text-sm font-medium">
             {files.length} fil{files.length !== 1 ? "er" : ""} valgt
           </p>
-          <div className="max-h-60 space-y-1 overflow-y-auto">
+          <div className="space-y-1">
             {files.map((file, i) => (
               <div
                 key={`${file.name}-${i}`}
