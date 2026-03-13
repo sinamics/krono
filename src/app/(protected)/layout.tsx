@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { AppSidebar } from "@/features/layout/Components/AppSidebar";
 import { SidebarBreadcrumb } from "@/features/layout/Components/SidebarBreadcrumb";
 import { getSession } from "@/lib/withAuth";
+import { db } from "@/lib/db";
 
 export default async function ProtectedLayout({
   children,
@@ -20,6 +21,11 @@ export default async function ProtectedLayout({
     redirect("/sign-in");
   }
 
+  const settings = await db.businessSettings.findUnique({
+    where: { userId: session.userId },
+    select: { businessName: true },
+  });
+
   return (
     <SidebarProvider
       style={
@@ -28,7 +34,7 @@ export default async function ProtectedLayout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar user={session.user} />
+      <AppSidebar user={session.user} businessName={settings?.businessName ?? undefined} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />

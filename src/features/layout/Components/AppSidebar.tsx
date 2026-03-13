@@ -57,9 +57,10 @@ const reportItems = [
 
 type Props = React.ComponentProps<typeof Sidebar> & {
   user?: { name: string; email: string };
+  businessName?: string;
 };
 
-export function AppSidebar({ user, ...props }: Props) {
+export function AppSidebar({ user, businessName, ...props }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -89,9 +90,9 @@ export function AppSidebar({ user, ...props }: Props) {
                   <Calculator className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Krono</span>
+                  <span className="font-semibold">{businessName || "Krono"}</span>
                   <span className="text-xs text-muted-foreground">
-                    MVA Regnskap
+                    {businessName ? "Krono MVA Regnskap" : "MVA Regnskap"}
                   </span>
                 </div>
               </Link>
