@@ -19,6 +19,7 @@ model user {
 
   sessions    session[]
   accounts    account[]
+  passkeys    passkey[]
   memberships organizationMember[]
   auditLogs   auditLog[]
 }
@@ -59,6 +60,23 @@ model verification {
   expiresAt  DateTime
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
+}
+
+model passkey {
+  id           String   @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String   @unique
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  aaguid       String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
 }
 
 model organization {
