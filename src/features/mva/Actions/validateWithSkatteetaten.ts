@@ -24,8 +24,8 @@ export const validateWithSkatteetaten = withAuth(
     // Get term data
     const termData = await db.mvaTerm.findUnique({
       where: {
-        userId_year_term: {
-          userId: auth.userId,
+        organizationId_year_term: {
+          organizationId: auth.organizationId,
           year,
           term,
         },
@@ -38,7 +38,7 @@ export const validateWithSkatteetaten = withAuth(
 
     // Get orgNr from business settings
     const settings = await db.businessSettings.findUnique({
-      where: { userId: auth.userId },
+      where: { organizationId: auth.organizationId },
     });
 
     if (!settings?.orgNr) {

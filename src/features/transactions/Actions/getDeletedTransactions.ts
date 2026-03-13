@@ -6,11 +6,11 @@ export type DeletedTransaction = transaction & {
 };
 
 export async function getDeletedTransactions(
-  userId: string
+  organizationId: string
 ): Promise<DeletedTransaction[]> {
   return db.transaction.findMany({
     where: {
-      userId,
+      organizationId,
       deletedAt: { not: null },
     },
     include: { supplier: true },

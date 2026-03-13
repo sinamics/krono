@@ -16,7 +16,7 @@ export default async function ArsoppgjorPage({ searchParams }: Props) {
     ? parseInt(params.year, 10)
     : new Date().getFullYear();
 
-  const data = await getArsoppgjorData(session.userId, year);
+  const data = await getArsoppgjorData(session.organizationId, year);
 
   return <ArsoppgjorOverview data={data} year={year} />;
 }

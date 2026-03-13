@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 
-export async function getNextBilagsnummer(userId: string): Promise<number> {
+export async function getNextBilagsnummer(organizationId: string): Promise<number> {
   const result = await db.transaction.aggregate({
-    where: { userId },
+    where: { organizationId },
     _max: { bilagsnummer: true },
   });
 

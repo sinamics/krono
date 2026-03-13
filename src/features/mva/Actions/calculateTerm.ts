@@ -16,7 +16,7 @@ export const calculateTerm = withAuth(
     const termPeriod = `${year}-${term}`;
 
     const transactions = await db.transaction.findMany({
-      where: { userId: auth.userId, termPeriod, deletedAt: null },
+      where: { organizationId: auth.organizationId, termPeriod, deletedAt: null },
     });
 
     const {
@@ -32,14 +32,14 @@ export const calculateTerm = withAuth(
 
     const mvaTerm = await db.mvaTerm.upsert({
       where: {
-        userId_year_term: {
-          userId: auth.userId,
+        organizationId_year_term: {
+          organizationId: auth.organizationId,
           year,
           term,
         },
       },
       create: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         year,
         term,
         kode52Grunnlag,

@@ -10,7 +10,7 @@ export const exportReport = withAuth(
     input: { year: number; termPeriod?: string }
   ): Promise<string> => {
     const where: Record<string, unknown> = {
-      userId: auth.userId,
+      organizationId: auth.organizationId,
       date: {
         gte: new Date(input.year, 0, 1),
         lt: new Date(input.year + 1, 0, 1),

@@ -1,9 +1,12 @@
 import { headers } from "next/headers";
 import { auth } from "./auth";
+import { db } from "./db";
 
 type AuthResult = {
   userId: string;
-  user: { id: string; name: string; email: string };
+  organizationId: string;
+  role: string; // org role: owner, admin, member
+  user: { id: string; name: string; email: string; role: string };
 };
 
 export async function getSession(): Promise<AuthResult | null> {
@@ -15,12 +18,31 @@ export async function getSession(): Promise<AuthResult | null> {
     return null;
   }
 
+  // Find the user's organization membership
+  const membership = await db.organizationMember.findFirst({
+    where: { userId: session.user.id },
+    include: { organization: true },
+  });
+
+  if (!membership) {
+    return null;
+  }
+
+  // Fetch user role from db (super_admin etc)
+  const userRecord = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
   return {
     userId: session.user.id,
+    organizationId: membership.organizationId,
+    role: membership.role,
     user: {
       id: session.user.id,
       name: session.user.name,
       email: session.user.email,
+      role: userRecord?.role ?? "user",
     },
   };
 }

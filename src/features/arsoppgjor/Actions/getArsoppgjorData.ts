@@ -43,13 +43,13 @@ export type ArsoppgjorData = {
 };
 
 export async function getArsoppgjorData(
-  userId: string,
+  organizationId: string,
   year: number
 ): Promise<ArsoppgjorData> {
   const [transactions, mvaTerms, settings] = await Promise.all([
     db.transaction.findMany({
       where: {
-        userId,
+        organizationId,
         date: {
           gte: new Date(year, 0, 1),
           lt: new Date(year + 1, 0, 1),
@@ -58,11 +58,11 @@ export async function getArsoppgjorData(
       },
     }),
     db.mvaTerm.findMany({
-      where: { userId, year },
+      where: { organizationId, year },
       orderBy: { term: "asc" },
     }),
     db.businessSettings.findUnique({
-      where: { userId },
+      where: { organizationId },
     }),
   ]);
 

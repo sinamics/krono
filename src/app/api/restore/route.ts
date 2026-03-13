@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Ikke autentisert" }, { status: 401 });
   }
 
-  const userId = session.userId;
+  const organizationId = session.organizationId;
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       for (const s of batch) {
         const newSupplier = await db.supplier.create({
           data: {
-            userId,
+            organizationId,
             name: s.name,
             country: s.country ?? "Norge",
             currency: s.currency ?? "NOK",
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     ([name]) => name.startsWith("uploads/") && !name.endsWith("/")
   );
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", userId);
+  const uploadDir = path.join(process.cwd(), "public", "uploads", organizationId);
   if (uploadEntries.length > 0) {
     await mkdir(uploadDir, { recursive: true });
   }
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
     const diskPath = path.join(uploadDir, safeName);
     await writeFile(diskPath, content);
-    const newUrl = `/uploads/${userId}/${safeName}`;
+    const newUrl = `/uploads/${organizationId}/${safeName}`;
     receiptUrlMap.set(`/${archivePath}`, newUrl);
   }
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 
       const newTx = await db.transaction.create({
         data: {
-          userId,
+          organizationId,
           date: new Date(tx.date),
           description: tx.description,
           amount: tx.amount,
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
           data: tx.auditLogs.map(
             (log: { action: string; changes: string; createdAt: string }) => ({
               transactionId: newTx.id,
-              userId,
+              userId: session.userId,
               action: log.action,
               changes: log.changes,
               createdAt: new Date(log.createdAt),
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     for (const term of data.mvaTerms) {
       await db.mvaTerm.upsert({
         where: {
-          userId_year_term: { userId, year: term.year, term: term.term },
+          organizationId_year_term: { organizationId, year: term.year, term: term.term },
         },
         update: {
           kode52Grunnlag: term.kode52Grunnlag,
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
           deadline: new Date(term.deadline),
         },
         create: {
-          userId,
+          organizationId,
           year: term.year,
           term: term.term,
           kode52Grunnlag: term.kode52Grunnlag,
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
   if (data.businessSettings) {
     const s = data.businessSettings;
     await db.businessSettings.upsert({
-      where: { userId },
+      where: { organizationId },
       update: {
         orgNr: s.orgNr,
         businessName: s.businessName,
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
         defaultCurrency: s.defaultCurrency ?? "NOK",
       },
       create: {
-        userId,
+        organizationId,
         orgNr: s.orgNr,
         businessName: s.businessName,
         address: s.address,
@@ -199,10 +199,10 @@ export async function POST(request: NextRequest) {
   if (data.integrations?.length) {
     for (const integ of data.integrations) {
       await db.integration.upsert({
-        where: { userId_provider: { userId, provider: integ.provider } },
+        where: { organizationId_provider: { organizationId, provider: integ.provider } },
         update: { apiKey: integ.apiKey, isActive: integ.isActive ?? true },
         create: {
-          userId,
+          organizationId,
           provider: integ.provider,
           apiKey: integ.apiKey,
           isActive: integ.isActive ?? true,

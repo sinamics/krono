@@ -16,7 +16,7 @@ export const checkDuplicate = withAuth(
 
     const existing = await db.transaction.findFirst({
       where: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         date: { gte: startOfDay, lte: endOfDay },
         amount: params.amount,
         deletedAt: null,

@@ -7,7 +7,7 @@ import { getExchangeRate } from "./getExchangeRate";
 export const fixExchangeRates = withAuth(async (auth) => {
   const transactions = await db.transaction.findMany({
     where: {
-      userId: auth.userId,
+      organizationId: auth.organizationId,
       currency: { not: "NOK" },
       exchangeRate: 1,
       deletedAt: null,

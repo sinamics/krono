@@ -15,14 +15,14 @@ export const bulkCreateTransactions = withAuth(
   async (auth, formData: unknown) => {
     const { items } = bulkTransactionSchema.parse(formData);
 
-    let nextBilagsnummer = await getNextBilagsnummer(auth.userId);
+    let nextBilagsnummer = await getNextBilagsnummer(auth.organizationId);
 
     // Auto-create suppliers for unmatched supplierName values
     const supplierCache = new Map<string, { id: string; type: string; defaultMvaCode: string | null }>();
 
     // Load existing suppliers
     const existingSuppliers = await db.supplier.findMany({
-      where: { userId: auth.userId },
+      where: { organizationId: auth.organizationId },
     });
     for (const s of existingSuppliers) {
       supplierCache.set(s.name.toLowerCase(), {
@@ -47,7 +47,7 @@ export const bulkCreateTransactions = withAuth(
     for (const name of toCreate) {
       const supplier = await db.supplier.create({
         data: {
-          userId: auth.userId,
+          organizationId: auth.organizationId,
           name,
           type: "NORWEGIAN",
           country: "Norge",
@@ -95,7 +95,7 @@ export const bulkCreateTransactions = withAuth(
 
       return db.transaction.create({
         data: {
-          userId: auth.userId,
+          organizationId: auth.organizationId,
           date: item.date,
           description: item.description,
           amount: item.amount,

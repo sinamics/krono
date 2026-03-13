@@ -13,8 +13,8 @@ export const submitTerm = withAuth(async (auth, input: SubmitTermInput) => {
 
   const existing = await db.mvaTerm.findUnique({
     where: {
-      userId_year_term: {
-        userId: auth.userId,
+      organizationId_year_term: {
+        organizationId: auth.organizationId,
         year,
         term,
       },

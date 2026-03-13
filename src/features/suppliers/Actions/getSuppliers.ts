@@ -6,7 +6,7 @@ export async function getSuppliers() {
   if (!session) return [];
 
   return db.supplier.findMany({
-    where: { userId: session.userId },
+    where: { organizationId: session.organizationId },
     include: { _count: { select: { transactions: true } } },
     orderBy: { name: "asc" },
   });

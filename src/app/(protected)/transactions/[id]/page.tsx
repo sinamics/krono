@@ -32,13 +32,13 @@ export default async function EditTransactionPage({ params }: Props) {
   if (!session) redirect("/sign-in");
 
   const { id } = await params;
-  const transaction = await getTransactionById(id, session.userId);
+  const transaction = await getTransactionById(id, session.organizationId);
   if (!transaction) notFound();
 
-  const locked = await isTermLocked(session.userId, transaction.termPeriod);
+  const locked = await isTermLocked(session.organizationId, transaction.termPeriod);
 
   const suppliers = await db.supplier.findMany({
-    where: { userId: session.userId },
+    where: { organizationId: session.organizationId },
     orderBy: { name: "asc" },
   });
 

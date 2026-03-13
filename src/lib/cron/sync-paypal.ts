@@ -45,9 +45,9 @@ async function getPaypalAccessToken(clientId: string, secret: string): Promise<s
   return data.access_token;
 }
 
-async function syncPaypalForUser(integration: {
+async function syncPaypalForOrg(integration: {
   id: string;
-  userId: string;
+  organizationId: string;
   apiKey: string;
   lastSyncAt: Date | null;
 }) {
@@ -116,18 +116,18 @@ async function syncPaypalForUser(integration: {
     `ppfee_${t.transaction_info.transaction_id}`,
   ]);
   const existing = await db.transaction.findMany({
-    where: { userId: integration.userId, externalId: { in: txIds } },
+    where: { organizationId: integration.organizationId, externalId: { in: txIds } },
     select: { externalId: true },
   });
   const existingIds = new Set(existing.map((t) => t.externalId));
 
   let paypalSupplier = await db.supplier.findFirst({
-    where: { userId: integration.userId, name: "PayPal", type: "FOREIGN" },
+    where: { organizationId: integration.organizationId, name: "PayPal", type: "FOREIGN" },
   });
   if (!paypalSupplier) {
     paypalSupplier = await db.supplier.create({
       data: {
-        userId: integration.userId,
+        organizationId: integration.organizationId,
         name: "PayPal",
         country: "Irland",
         currency: "EUR",
@@ -139,7 +139,7 @@ async function syncPaypalForUser(integration: {
 
   let imported = 0;
   let skipped = 0;
-  let nextBilagsnummer = await getNextBilagsnummer(integration.userId);
+  let nextBilagsnummer = await getNextBilagsnummer(integration.organizationId);
 
   for (const tx of validTransactions) {
     const info = tx.transaction_info;
@@ -182,7 +182,7 @@ async function syncPaypalForUser(integration: {
         operations.push(
           db.transaction.create({
             data: {
-              userId: integration.userId,
+              organizationId: integration.organizationId,
               date: txDate,
               description,
               amount,
@@ -203,7 +203,7 @@ async function syncPaypalForUser(integration: {
         operations.push(
           db.transaction.create({
             data: {
-              userId: integration.userId,
+              organizationId: integration.organizationId,
               date: txDate,
               description: `PayPal-gebyr: ${description}`,
               amount: feeValue,
@@ -250,15 +250,15 @@ export function syncPaypal() {
 
       for (const integration of integrations) {
         try {
-          const result = await syncPaypalForUser(integration);
+          const result = await syncPaypalForOrg(integration);
           if (result.imported > 0) {
             console.log(
-              `[cron:paypal] User ${integration.userId}: ${result.imported} imported, ${result.skipped} skipped`
+              `[cron:paypal] Org ${integration.organizationId}: ${result.imported} imported, ${result.skipped} skipped`
             );
           }
         } catch (err) {
           console.error(
-            `[cron:paypal] Failed for user ${integration.userId}:`,
+            `[cron:paypal] Failed for org ${integration.organizationId}:`,
             err
           );
         }

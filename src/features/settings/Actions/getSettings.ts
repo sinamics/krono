@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 
-export async function getSettings(userId: string) {
+export async function getSettings(organizationId: string) {
   const settings = await db.businessSettings.findUnique({
-    where: { userId },
+    where: { organizationId },
   });
 
   return settings;
