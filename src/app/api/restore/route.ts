@@ -34,6 +34,11 @@ export async function POST(request: NextRequest) {
 
   const data = JSON.parse(await dataFile.async("string"));
 
+  // Backward compatible: v1 backups (userId-based) and v2 (organizationId-based)
+  // are both supported. All data is re-assigned to the current user's organizationId
+  // regardless of what the backup contained. Old IDs (userId, supplierId, etc.) are
+  // only used for internal mapping (e.g. supplier old→new ID) and receipt URL remapping.
+
   // --- Restore suppliers ---
   const supplierIdMap = new Map<string, string>();
   if (data.suppliers?.length) {
