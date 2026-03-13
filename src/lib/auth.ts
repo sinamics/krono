@@ -1,6 +1,9 @@
+import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "./db";
+
+const baseURL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -70,4 +73,11 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
   },
+  plugins: [
+    passkey({
+      rpID: new URL(baseURL).hostname,
+      rpName: "Krono",
+      origin: baseURL,
+    }),
+  ],
 });

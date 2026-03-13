@@ -34,7 +34,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { formatCurrency, formatDate, formatTermLabel, getMvaCodeLabel } from "@/lib/format";
+import { formatCurrency, formatDate, formatTermLabel } from "@/lib/format";
 import { submitTerm } from "@/features/mva/Actions/submitTerm";
 import { reopenTerm } from "@/features/mva/Actions/reopenTerm";
 import { validateWithSkatteetaten } from "@/features/mva/Actions/validateWithSkatteetaten";
