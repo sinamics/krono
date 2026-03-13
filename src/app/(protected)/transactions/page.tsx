@@ -58,7 +58,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
   ]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div className="flex shrink-0 items-center justify-between">
         <h1 className="text-2xl font-bold">Transaksjoner</h1>
         <div className="flex items-center gap-2">
