@@ -7,7 +7,7 @@ export default async function EkomSettingsPage() {
   const session = await getSession();
   if (!session) redirect("/sign-in");
 
-  const settings = await getSettings(session.userId);
+  const settings = await getSettings(session.organizationId);
 
   return (
     <EkomSettingsForm

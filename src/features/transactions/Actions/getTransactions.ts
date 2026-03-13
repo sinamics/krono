@@ -13,7 +13,7 @@ export type PaginatedTransactions = {
 };
 
 type TransactionFilters = {
-  userId: string;
+  organizationId: string;
   termPeriod?: string;
   type?: string;
   mvaCode?: string;
@@ -30,7 +30,7 @@ type TransactionFilters = {
 export async function getTransactions(filters: TransactionFilters): Promise<PaginatedTransactions> {
   const page = filters.page ?? 1;
   const pageSize = filters.pageSize ?? 20;
-  const where: Prisma.transactionWhereInput = { userId: filters.userId, deletedAt: null };
+  const where: Prisma.transactionWhereInput = { organizationId: filters.organizationId, deletedAt: null };
 
   if (filters.termPeriod) {
     where.termPeriod = filters.termPeriod;
@@ -111,13 +111,13 @@ export async function getTransactions(filters: TransactionFilters): Promise<Pagi
   return { data, total, page, pageSize };
 }
 
-export async function getTransactionById(id: string, userId: string) {
+export async function getTransactionById(id: string, organizationId: string) {
   const transaction = await db.transaction.findUnique({
     where: { id },
     include: { supplier: true },
   });
 
-  if (!transaction || transaction.userId !== userId || transaction.deletedAt) {
+  if (!transaction || transaction.organizationId !== organizationId || transaction.deletedAt) {
     return null;
   }
 

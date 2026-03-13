@@ -13,16 +13,14 @@ model user {
   email         String   @unique
   emailVerified Boolean  @default(false)
   image         String?
+  role          String   @default("user") // user, super_admin
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions     session[]
-  accounts     account[]
-  transactions transaction[]
-  suppliers    supplier[]
-  mvaTerms     mvaTerm[]
-  settings     businessSettings?
-  integrations integration[]
+  sessions    session[]
+  accounts    account[]
+  memberships organizationMember[]
+  auditLogs   auditLog[]
 }
 
 model session {
@@ -63,41 +61,67 @@ model verification {
   updatedAt  DateTime? @updatedAt
 }
 
-model transaction {
-  id           String     @id @default(cuid())
-  userId       String
-  user         user       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime
-  description  String
-  amount       Float
-  currency     String     @default("NOK")
-  exchangeRate Float      @default(1)
-  amountNOK    Float
-  type         String // SALE or EXPENSE
-  mvaCode      String // CODE_52, CODE_86, CODE_1, CODE_11, CODE_13, CODE_81
-  supplierId   String?
-  supplier     supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  category     String?
-  receiptUrl   String?
-  isRecurring  Boolean    @default(false)
-  recurringDay Int?
-  notes        String?
-  termPeriod   String // e.g. "2025-6" for Nov-Dec 2025
-  externalId   String?
-  bilagsnummer Int?
-  deletedAt    DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  auditLogs    auditLog[]
+model organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([userId, externalId])
-  @@unique([userId, bilagsnummer])
+  members      organizationMember[]
+  transactions transaction[]
+  suppliers    supplier[]
+  mvaTerms     mvaTerm[]
+  settings     businessSettings?
+  integrations integration[]
+}
+
+model organizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           user         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("owner") // owner, admin, member
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, userId])
+}
+
+model transaction {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  date           DateTime
+  description    String
+  amount         Float
+  currency       String       @default("NOK")
+  exchangeRate   Float        @default(1)
+  amountNOK      Float
+  type           String // SALE or EXPENSE
+  mvaCode        String // CODE_52, CODE_86, CODE_1, CODE_11, CODE_13, CODE_81
+  supplierId     String?
+  supplier       supplier?    @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  category       String?
+  receiptUrl     String?
+  isRecurring    Boolean      @default(false)
+  recurringDay   Int?
+  notes          String?
+  termPeriod     String // e.g. "2025-6" for Nov-Dec 2025
+  externalId     String?
+  bilagsnummer   Int?
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  auditLogs      auditLog[]
+
+  @@unique([organizationId, externalId])
+  @@unique([organizationId, bilagsnummer])
 }
 
 model supplier {
   id              String        @id @default(cuid())
-  userId          String
-  user            user          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId  String
+  organization    organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name            String
   country         String        @default("Norge")
   currency        String        @default("NOK")
@@ -116,6 +140,7 @@ model auditLog {
   transactionId String
   transaction   transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   userId        String
+  user          user        @relation(fields: [userId], references: [id], onDelete: Cascade)
   action        String // CREATE, UPDATE, DELETE, RESTORE
   changes       String // JSON of { field: { from, to } }
   createdAt     DateTime    @default(now())
@@ -125,49 +150,55 @@ model auditLog {
 }
 
 model mvaTerm {
-  id              String    @id @default(cuid())
-  userId          String
-  user            user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   year            Int
   term            Int // 1-6 (1=Jan-Feb, 2=Mar-Apr, etc.)
-  kode52Grunnlag  Float     @default(0)
-  kode86Grunnlag  Float     @default(0)
-  kode86Mva       Float     @default(0)
-  kode86Fradrag   Float     @default(0)
-  kode1MvaFradrag Float     @default(0)
-  totalMva        Float     @default(0)
-  status          String    @default("DRAFT") // DRAFT or SUBMITTED
+  kode52Grunnlag  Float        @default(0)
+  kode86Grunnlag  Float        @default(0)
+  kode86Mva       Float        @default(0)
+  kode86Fradrag   Float        @default(0)
+  kode1MvaFradrag Float        @default(0)
+  totalMva        Float        @default(0)
+  status          String       @default("DRAFT") // DRAFT or SUBMITTED
   submittedAt     DateTime?
   deadline        DateTime
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  @@unique([userId, year, term])
+  @@unique([organizationId, year, term])
 }
 
 model integration {
-  id         String    @id @default(cuid())
-  userId     String
-  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider   String // "stripe"
-  apiKey     String
-  isActive   Boolean   @default(true)
-  lastSyncAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider       String // "stripe" or "paypal"
+  apiKey         String
+  isActive       Boolean      @default(true)
+  lastSyncAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  @@unique([userId, provider])
+  @@unique([organizationId, provider])
 }
 
 model businessSettings {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
-  user               user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String       @id @default(cuid())
+  organizationId     String       @unique
+  organization       organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orgNr              String?
   businessName       String?
   address            String?
-  ekomPrivatePercent Float    @default(0)
-  defaultCurrency    String   @default("NOK")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  ekomPrivatePercent Float        @default(0)
+  defaultCurrency    String       @default("NOK")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model appSettings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
 }

@@ -32,11 +32,11 @@ export const createTransaction = withAuth(
       supplierDefaultMvaCode
     );
 
-    const bilagsnummer = await getNextBilagsnummer(auth.userId);
+    const bilagsnummer = await getNextBilagsnummer(auth.organizationId);
 
     const transaction = await db.transaction.create({
       data: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         date: data.date,
         description: data.description,
         amount: data.amount,

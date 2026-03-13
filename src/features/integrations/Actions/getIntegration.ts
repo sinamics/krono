@@ -9,8 +9,8 @@ export async function getStripeIntegration() {
 
   const integration = await db.integration.findUnique({
     where: {
-      userId_provider: {
-        userId: session.userId,
+      organizationId_provider: {
+        organizationId: session.organizationId,
         provider: "stripe",
       },
     },
@@ -35,8 +35,8 @@ export async function getPaypalIntegration() {
 
   const integration = await db.integration.findUnique({
     where: {
-      userId_provider: {
-        userId: session.userId,
+      organizationId_provider: {
+        organizationId: session.organizationId,
         provider: "paypal",
       },
     },

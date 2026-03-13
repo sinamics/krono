@@ -8,11 +8,11 @@ import { getLockedTermPeriods } from "@/lib/term-lock";
 export const deleteTransactions = withAuth(async (auth, ids: string[]) => {
   if (ids.length === 0) return { deleted: 0 };
 
-  const lockedTerms = await getLockedTermPeriods(auth.userId);
+  const lockedTerms = await getLockedTermPeriods(auth.organizationId);
 
   // Check if any selected transactions belong to locked terms
   const transactions = await db.transaction.findMany({
-    where: { id: { in: ids }, userId: auth.userId },
+    where: { id: { in: ids }, organizationId: auth.organizationId },
     select: { id: true, termPeriod: true },
   });
 
@@ -28,7 +28,7 @@ export const deleteTransactions = withAuth(async (auth, ids: string[]) => {
   const result = await db.transaction.updateMany({
     where: {
       id: { in: ids },
-      userId: auth.userId,
+      organizationId: auth.organizationId,
     },
     data: { deletedAt: now },
   });

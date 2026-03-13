@@ -48,7 +48,7 @@ export const getDashboardData = withAuth(async (auth, year: number) => {
   // Fetch all transactions for the selected year
   const allTransactions = await db.transaction.findMany({
     where: {
-      userId: auth.userId,
+      organizationId: auth.organizationId,
       termPeriod: { startsWith: `${year}-` },
       deletedAt: null,
     },
@@ -57,7 +57,7 @@ export const getDashboardData = withAuth(async (auth, year: number) => {
 
   // Fetch all MVA terms for the selected year
   const mvaTerms = await db.mvaTerm.findMany({
-    where: { userId: auth.userId, year },
+    where: { organizationId: auth.organizationId, year },
   });
 
   const mvaTermMap = new Map(mvaTerms.map((t) => [t.term, t]));

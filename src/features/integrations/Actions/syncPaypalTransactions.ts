@@ -71,8 +71,8 @@ export const syncPaypalTransactions = withAuth(
 
     const integration = await db.integration.findUnique({
       where: {
-        userId_provider: {
-          userId: auth.userId,
+        organizationId_provider: {
+          organizationId: auth.organizationId,
           provider: "paypal",
         },
       },
@@ -150,7 +150,7 @@ export const syncPaypalTransactions = withAuth(
 
     const existing = await db.transaction.findMany({
       where: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         externalId: { in: txIds },
       },
       select: { externalId: true },
@@ -160,7 +160,7 @@ export const syncPaypalTransactions = withAuth(
     // Find or create PayPal supplier for fees
     let paypalSupplier = await db.supplier.findFirst({
       where: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         name: "PayPal",
         type: "FOREIGN",
       },
@@ -169,7 +169,7 @@ export const syncPaypalTransactions = withAuth(
     if (!paypalSupplier) {
       paypalSupplier = await db.supplier.create({
         data: {
-          userId: auth.userId,
+          organizationId: auth.organizationId,
           name: "PayPal",
           country: "Irland",
           currency: "EUR",
@@ -182,7 +182,7 @@ export const syncPaypalTransactions = withAuth(
     let imported = 0;
     let skipped = 0;
     const errors: string[] = [];
-    let nextBilagsnummer = await getNextBilagsnummer(auth.userId);
+    let nextBilagsnummer = await getNextBilagsnummer(auth.organizationId);
 
     for (const tx of validTransactions) {
       const info = tx.transaction_info;
@@ -227,7 +227,7 @@ export const syncPaypalTransactions = withAuth(
           operations.push(
             db.transaction.create({
               data: {
-                userId: auth.userId,
+                organizationId: auth.organizationId,
                 date: txDate,
                 description,
                 amount,
@@ -249,7 +249,7 @@ export const syncPaypalTransactions = withAuth(
           operations.push(
             db.transaction.create({
               data: {
-                userId: auth.userId,
+                organizationId: auth.organizationId,
                 date: txDate,
                 description: `PayPal-gebyr: ${description}`,
                 amount: feeValue,

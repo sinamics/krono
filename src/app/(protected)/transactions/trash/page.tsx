@@ -10,7 +10,7 @@ export default async function TrashPage() {
   const session = await getSession();
   if (!session) redirect("/sign-in");
 
-  const transactions = await getDeletedTransactions(session.userId);
+  const transactions = await getDeletedTransactions(session.organizationId);
 
   return (
     <div className="space-y-6">

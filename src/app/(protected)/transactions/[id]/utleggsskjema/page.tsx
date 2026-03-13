@@ -13,11 +13,11 @@ export default async function UtleggsskjemaPage({ params }: Props) {
   if (!session) redirect("/sign-in");
 
   const { id } = await params;
-  const transaction = await getTransactionById(id, session.userId);
+  const transaction = await getTransactionById(id, session.organizationId);
   if (!transaction) notFound();
 
   const settings = await db.businessSettings.findUnique({
-    where: { userId: session.userId },
+    where: { organizationId: session.organizationId },
   });
 
   return (

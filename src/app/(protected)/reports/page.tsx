@@ -15,7 +15,7 @@ export default async function ReportsPage({ searchParams }: Props) {
   const params = await searchParams;
   const year = params.year ? parseInt(params.year, 10) : new Date().getFullYear();
 
-  const reportData = await generateReport(session.userId, year);
+  const reportData = await generateReport(session.organizationId, year);
 
   return (
     <div className="space-y-6">

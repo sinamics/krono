@@ -21,7 +21,7 @@ export default async function MvaPage({ searchParams }: PageProps) {
   const selectedTerm = params.term ? parseInt(params.term) : null;
 
   const allTerms = await db.mvaTerm.findMany({
-    where: { userId: session.userId, year },
+    where: { organizationId: session.organizationId, year },
     orderBy: { term: "asc" },
   });
 
@@ -42,7 +42,7 @@ export default async function MvaPage({ searchParams }: PageProps) {
     const [prevTxs, currTxs] = await Promise.all([
       db.transaction.findMany({
         where: {
-          userId: session.userId,
+          organizationId: session.organizationId,
           termPeriod: prevTermPeriod,
           deletedAt: null,
           supplierId: { not: null },
@@ -52,7 +52,7 @@ export default async function MvaPage({ searchParams }: PageProps) {
       }),
       db.transaction.findMany({
         where: {
-          userId: session.userId,
+          organizationId: session.organizationId,
           termPeriod: currTermPeriod,
           deletedAt: null,
           supplierId: { not: null },

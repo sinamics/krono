@@ -11,7 +11,7 @@ export default async function BulkImportPage() {
   if (!session) redirect("/sign-in");
 
   const suppliers = await db.supplier.findMany({
-    where: { userId: session.userId },
+    where: { organizationId: session.organizationId },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });

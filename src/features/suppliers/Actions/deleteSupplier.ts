@@ -9,7 +9,7 @@ export const deleteSupplier = withAuth(async (auth, id: string) => {
     include: { _count: { select: { transactions: true } } },
   });
 
-  if (!existing || existing.userId !== auth.userId) {
+  if (!existing || existing.organizationId !== auth.organizationId) {
     throw new Error("Leverandør ikke funnet");
   }
 

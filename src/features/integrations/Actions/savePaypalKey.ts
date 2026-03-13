@@ -23,13 +23,13 @@ export const savePaypalKey = withAuth(async (auth, formData: unknown) => {
 
   await db.integration.upsert({
     where: {
-      userId_provider: {
-        userId: auth.userId,
+      organizationId_provider: {
+        organizationId: auth.organizationId,
         provider: "paypal",
       },
     },
     create: {
-      userId: auth.userId,
+      organizationId: auth.organizationId,
       provider: "paypal",
       apiKey: JSON.stringify({ clientId, secret }),
       isActive: true,
@@ -46,7 +46,7 @@ export const savePaypalKey = withAuth(async (auth, formData: unknown) => {
 export const disconnectPaypal = withAuth(async (auth) => {
   await db.integration.deleteMany({
     where: {
-      userId: auth.userId,
+      organizationId: auth.organizationId,
       provider: "paypal",
     },
   });

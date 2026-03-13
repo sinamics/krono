@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({ error: "Ikke autentisert" }, { status: 401 });
   }
 
-  const userId = session.userId;
+  const organizationId = session.organizationId;
 
   const passthrough = new PassThrough();
   const archive = archiver("zip", { zlib: { level: 5 } });
@@ -29,10 +29,10 @@ export async function GET() {
   (async () => {
     try {
       const [suppliers, mvaTerms, settings, integrations] = await Promise.all([
-        db.supplier.findMany({ where: { userId } }),
-        db.mvaTerm.findMany({ where: { userId } }),
-        db.businessSettings.findUnique({ where: { userId } }),
-        db.integration.findMany({ where: { userId } }),
+        db.supplier.findMany({ where: { organizationId } }),
+        db.mvaTerm.findMany({ where: { organizationId } }),
+        db.businessSettings.findUnique({ where: { organizationId } }),
+        db.integration.findMany({ where: { organizationId } }),
       ]);
 
       jsonStream.write(
@@ -51,7 +51,7 @@ export async function GET() {
 
       while (true) {
         const batch = await db.transaction.findMany({
-          where: { userId },
+          where: { organizationId },
           include: { auditLogs: true },
           take: BATCH_SIZE,
           orderBy: { id: "asc" },

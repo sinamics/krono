@@ -41,13 +41,13 @@ const MONTH_LABELS = [
 ];
 
 export async function generateReport(
-  userId: string,
+  organizationId: string,
   year: number
 ): Promise<ReportData> {
   const [transactions, mvaTerms] = await Promise.all([
     db.transaction.findMany({
       where: {
-        userId,
+        organizationId,
         date: {
           gte: new Date(year, 0, 1),
           lt: new Date(year + 1, 0, 1),
@@ -56,7 +56,7 @@ export async function generateReport(
       },
     }),
     db.mvaTerm.findMany({
-      where: { userId, year },
+      where: { organizationId, year },
       orderBy: { term: "asc" },
     }),
   ]);
