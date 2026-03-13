@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "@/lib/auth-client";
+import { authClient, signIn } from "@/lib/auth-client";
 import { loginSchema, type LoginFormValues } from "../Schema/loginSchema";
+import { Fingerprint } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -34,6 +36,7 @@ export function LoginForm({ registrationEnabled = true }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -72,6 +75,24 @@ export function LoginForm({ registrationEnabled = true }: Props) {
     }
   }
 
+  async function handlePasskeySignIn() {
+    setError(null);
+    setPasskeyLoading(true);
+    try {
+      const result = await authClient.signIn.passkey();
+      if (result?.error) {
+        setError(result.error.message || "Passkey-innlogging feilet.");
+        setPasskeyLoading(false);
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Passkey-innlogging feilet.");
+      setPasskeyLoading(false);
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -80,7 +101,23 @@ export function LoginForm({ registrationEnabled = true }: Props) {
           Skriv inn e-post og passord for å logge inn
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={handlePasskeySignIn}
+          disabled={passkeyLoading}
+        >
+          <Fingerprint className="mr-2 size-4" />
+          {passkeyLoading ? "Logger inn…" : "Logg inn med Passkey"}
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <Separator className="flex-1" />
+          <span className="text-xs text-muted-foreground">eller</span>
+          <Separator className="flex-1" />
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
             <FormField
@@ -93,7 +130,7 @@ export function LoginForm({ registrationEnabled = true }: Props) {
                     <Input
                       type="email"
                       placeholder="din@epost.no"
-                      autoComplete="email"
+                      autoComplete="username webauthn"
                       {...field}
                     />
                   </FormControl>

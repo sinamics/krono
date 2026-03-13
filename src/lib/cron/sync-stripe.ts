@@ -179,7 +179,8 @@ export function syncStripe() {
         try {
           const result = await syncStripeForOrg(integration);
           if (result.imported > 0) {
-            console.log(
+            // biome-ignore lint/suspicious/noConsole: intentional cron job logging
+            console.info(
               `[cron:stripe] Org ${integration.organizationId}: ${result.imported} imported, ${result.skipped} skipped`
             );
           }
@@ -196,5 +197,6 @@ export function syncStripe() {
   });
 
   job.start();
-  console.log("[cron:stripe] Scheduled: 1st of every month at 02:00 UTC");
+  // biome-ignore lint/suspicious/noConsole: intentional cron job logging
+  console.info("[cron:stripe] Scheduled: 1st of every month at 02:00 UTC");
 }

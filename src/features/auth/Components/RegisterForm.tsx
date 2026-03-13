@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signUp } from "@/lib/auth-client";
+import { signUp, signIn } from "@/lib/auth-client";
 import {
   registerSchema,
   type RegisterFormValues,
@@ -36,7 +36,7 @@ export function RegisterForm() {
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", password: "" },
   });
 
   async function onSubmit(values: RegisterFormValues) {
@@ -60,6 +60,18 @@ export function RegisterForm() {
           setError(msg || "Registrering feilet. Prøv igjen.");
         }
         setLoading(false);
+        return;
+      }
+
+      // Auto sign-in after registration
+      const loginResult = await signIn.email({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (loginResult.error) {
+        // Registration succeeded but login failed — redirect to sign-in
+        router.push("/sign-in");
         return;
       }
 
@@ -124,24 +136,6 @@ export function RegisterForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Passord</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bekreft passord</FormLabel>
                   <FormControl>
                     <Input
                       type="password"

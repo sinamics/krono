@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { withAuth } from "@/lib/withAuth";
 import { generateMvaMeldingXml } from "@/lib/skatteetaten/xml";
-import { validateMvaMelding, exchangeToken } from "@/lib/skatteetaten/api";
+import { validateMvaMelding } from "@/lib/skatteetaten/api";
 import { cookies } from "next/headers";
 
 type ValidateInput = {

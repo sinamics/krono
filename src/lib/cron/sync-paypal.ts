@@ -252,7 +252,8 @@ export function syncPaypal() {
         try {
           const result = await syncPaypalForOrg(integration);
           if (result.imported > 0) {
-            console.log(
+            // biome-ignore lint/suspicious/noConsole: intentional cron job logging
+            console.info(
               `[cron:paypal] Org ${integration.organizationId}: ${result.imported} imported, ${result.skipped} skipped`
             );
           }
@@ -269,5 +270,6 @@ export function syncPaypal() {
   });
 
   job.start();
-  console.log("[cron:paypal] Scheduled: 1st of every month at 03:00 UTC");
+  // biome-ignore lint/suspicious/noConsole: intentional cron job logging
+  console.info("[cron:paypal] Scheduled: 1st of every month at 03:00 UTC");
 }
