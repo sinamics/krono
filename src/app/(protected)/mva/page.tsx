@@ -98,6 +98,7 @@ export default async function MvaPage({ searchParams }: PageProps) {
 
       {result && (
         <MvaMeldingPreview
+          key={`${result.mvaTerm.year}-${result.mvaTerm.term}`}
           termData={result.mvaTerm}
           transactions={result.transactions}
           missingSuppliers={missingSuppliers}
