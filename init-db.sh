@@ -17,7 +17,7 @@ done
 echo "PostgreSQL is ready!"
 
 echo "Applying database schema..."
-npx prisma db push --accept-data-loss
+npx prisma migrate deploy
 echo "Schema applied successfully!"
 
 echo "Starting application..."
