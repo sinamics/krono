@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { getSession } from "@/lib/withAuth";
 import { db } from "@/lib/db";
 
 export default async function LandingPage() {
+  await connection();
   const session = await getSession();
   if (session) redirect("/dashboard");
 
