@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, subMonths, startOfYear, endOfYear, subYears } from "date-fns";
 import { nb } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Clock } from "lucide-react";
+import { getNextAutoSync } from "@/lib/next-sync";
 import {
   Card,
   CardContent,
@@ -159,6 +160,15 @@ export function PaypalConnectionCard({ integration }: Props) {
                     {new Date(current.lastSyncAt).toLocaleString("nb-NO")}
                   </p>
                 )}
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Clock className="size-3" />
+                  Neste auto-sync:{" "}
+                  {getNextAutoSync("paypal").toLocaleDateString("nb-NO", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
               </div>
               <Button
                 variant="outline"
