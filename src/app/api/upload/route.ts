@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     process.cwd(),
     "public",
     "uploads",
-    session.userId
+    session.organizationId
   );
   await mkdir(uploadDir, { recursive: true });
 
@@ -56,6 +56,6 @@ export async function POST(request: NextRequest) {
 
   await writeFile(filePath, buffer);
 
-  const url = `/uploads/${session.userId}/${safeName}`;
+  const url = `/uploads/${session.organizationId}/${safeName}`;
   return NextResponse.json({ url });
 }

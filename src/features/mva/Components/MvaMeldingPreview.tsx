@@ -25,6 +25,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
@@ -33,8 +39,10 @@ import {
   Send,
   ChevronDown,
   ChevronRight,
+  Copy,
+  Check,
 } from "lucide-react";
-import { formatCurrency, formatDate, formatTermLabel, getMvaCodeLabel } from "@/lib/format";
+import { formatCurrency, formatDate, formatTermLabel } from "@/lib/format";
 import { submitTerm } from "@/features/mva/Actions/submitTerm";
 import { reopenTerm } from "@/features/mva/Actions/reopenTerm";
 import { validateWithSkatteetaten } from "@/features/mva/Actions/validateWithSkatteetaten";
@@ -107,12 +115,49 @@ function getTermChecklist(
   return { warnings, passed };
 }
 
+function CopyableValue({ value, label }: { value: number; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  const rounded = Math.round(value);
+
+  function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(String(Math.abs(rounded)));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono tabular-nums hover:bg-muted transition-colors cursor-copy"
+          >
+            {formatCurrency(value)}
+            {copied ? (
+              <Check className="size-3 text-green-500" />
+            ) : (
+              <Copy className="size-3 text-muted-foreground" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{copied ? "Kopiert!" : `Klikk for å kopiere ${label ? `(${label})` : ""}`}</p>
+          {label && !copied && <p className="text-xs text-muted-foreground">Skriv inn i &laquo;{label}&raquo;-feltet i Skatteetaten</p>}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 function TransactionRows({ transactions }: { transactions: transaction[] }) {
   if (transactions.length === 0) {
     return (
       <TableRow>
         <TableCell
-          colSpan={4}
+          colSpan={5}
           className="text-center text-sm text-muted-foreground bg-muted/30 py-2"
         >
           Ingen transaksjoner
@@ -129,7 +174,7 @@ function TransactionRows({ transactions }: { transactions: transaction[] }) {
           className="bg-muted/30 text-sm cursor-pointer hover:bg-muted/60"
           onClick={() => window.open(`/transactions/${tx.id}`, "_blank")}
         >
-          <TableCell className="pl-9 py-1.5">
+          <TableCell className="pl-9 py-1.5" colSpan={2}>
             <span className="text-muted-foreground mr-2">
               {formatDate(tx.date)}
             </span>
@@ -297,100 +342,133 @@ export function MvaMeldingPreview({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Tallene er avrundet til hele kroner slik Skatteetaten krever. Klikk p&aring; et tall for &aring; kopiere.
+        </p>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Post</TableHead>
+              <TableHead>Kode</TableHead>
+              <TableHead>Beskrivelse</TableHead>
               <TableHead className="text-right">Grunnlag</TableHead>
               <TableHead className="text-right">Sats</TableHead>
               <TableHead className="text-right">MVA</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
+            {/* Kode 52 */}
             <TableRow
               className="cursor-pointer hover:bg-muted/50"
               onClick={() => toggleCode("CODE_52")}
             >
-              <TableCell className="flex items-center gap-1.5">
-                {expandedCode === "CODE_52" ? (
-                  <ChevronDown className="size-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                )}
-                Kode 52 - Utførsel
+              <TableCell className="font-mono font-medium">
+                <span className="flex items-center gap-1.5">
+                  {expandedCode === "CODE_52" ? (
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  )}
+                  52
+                </span>
+              </TableCell>
+              <TableCell>
+                <div>Salg av varer og tjenester til utlandet (nullsats)</div>
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(termData.kode52Grunnlag)}
+                <CopyableValue value={termData.kode52Grunnlag} label="Grunnlag" />
               </TableCell>
-              <TableCell className="text-right">0%</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right text-muted-foreground">0%</TableCell>
+              <TableCell className="text-right text-muted-foreground">
                 {formatCurrency(0)}
               </TableCell>
             </TableRow>
             {expandedCode === "CODE_52" && (
               <TransactionRows transactions={getTransactionsForCode("CODE_52")} />
             )}
-            <TableRow
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => toggleCode("CODE_86")}
-            >
-              <TableCell className="flex items-center gap-1.5">
-                {expandedCode === "CODE_86" ? (
-                  <ChevronDown className="size-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                )}
-                Kode 86 - Beregnet
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(termData.kode86Grunnlag)}
-              </TableCell>
-              <TableCell className="text-right">25%</TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(termData.kode86Mva)}
-              </TableCell>
-            </TableRow>
-            {expandedCode === "CODE_86" && (
-              <TransactionRows transactions={getTransactionsForCode("CODE_86")} />
-            )}
-            <TableRow>
-              <TableCell className="pl-9">Kode 86 - Fradrag</TableCell>
-              <TableCell className="text-right" />
-              <TableCell className="text-right" />
-              <TableCell className="text-right">
-                {formatCurrency(termData.kode86Fradrag)}
-              </TableCell>
-            </TableRow>
+
+            {/* Kode 1 */}
             <TableRow
               className="cursor-pointer hover:bg-muted/50"
               onClick={() => toggleCode("CODE_1")}
             >
-              <TableCell className="flex items-center gap-1.5">
-                {expandedCode === "CODE_1" ? (
-                  <ChevronDown className="size-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                )}
-                Kode 1 - Fradrag
+              <TableCell className="font-mono font-medium">
+                <span className="flex items-center gap-1.5">
+                  {expandedCode === "CODE_1" ? (
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  )}
+                  1
+                </span>
+              </TableCell>
+              <TableCell>
+                <div>Kj&oslash;p av varer og tjenester med fradragsrett (h&oslash;y sats)</div>
               </TableCell>
               <TableCell className="text-right" />
-              <TableCell className="text-right" />
+              <TableCell className="text-right text-muted-foreground">25%</TableCell>
               <TableCell className="text-right">
-                {formatCurrency(termData.kode1MvaFradrag)}
+                <CopyableValue value={termData.kode1MvaFradrag} label="MVA" />
               </TableCell>
             </TableRow>
             {expandedCode === "CODE_1" && (
               <TransactionRows transactions={getTransactionsForCode("CODE_1")} />
             )}
-            <TableRow className="font-bold">
-              <TableCell className="pl-9">Sum MVA</TableCell>
+
+            {/* Kode 86 - Beregnet */}
+            <TableRow
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => toggleCode("CODE_86")}
+            >
+              <TableCell className="font-mono font-medium" rowSpan={2}>
+                <span className="flex items-center gap-1.5">
+                  {expandedCode === "CODE_86" ? (
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  )}
+                  86
+                </span>
+              </TableCell>
+              <TableCell>
+                <div>Kj&oslash;p av tjenester fra utlandet (h&oslash;y sats)</div>
+              </TableCell>
+              <TableCell className="text-right">
+                <CopyableValue value={termData.kode86Grunnlag} label="Grunnlag" />
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground">25%</TableCell>
+              <TableCell className="text-right">
+                <CopyableValue value={termData.kode86Mva} label="MVA" />
+              </TableCell>
+            </TableRow>
+            {expandedCode === "CODE_86" && (
+              <TransactionRows transactions={getTransactionsForCode("CODE_86")} />
+            )}
+
+            {/* Kode 86 - Fradrag */}
+            <TableRow>
+              <TableCell>
+                <div className="text-muted-foreground">Fradrag p&aring; kj&oslash;p av tjenester fra utlandet (h&oslash;y sats)</div>
+              </TableCell>
+              <TableCell className="text-right" />
+              <TableCell className="text-right text-muted-foreground">25%</TableCell>
+              <TableCell className="text-right">
+                <CopyableValue value={termData.kode86Fradrag} label="MVA" />
+              </TableCell>
+            </TableRow>
+
+            {/* Sum */}
+            <TableRow className="font-bold border-t-2">
+              <TableCell />
+              <TableCell>Sum merverdiavgift</TableCell>
               <TableCell className="text-right" />
               <TableCell className="text-right" />
               <TableCell
                 className={`text-right ${termData.totalMva < 0 ? "text-green-600 dark:text-green-400" : ""}`}
               >
-                {formatCurrency(termData.totalMva)}
-                {termData.totalMva < 0 && " (til gode)"}
+                <CopyableValue value={termData.totalMva} label="Sum" />
+                {termData.totalMva < 0 && (
+                  <span className="text-xs font-normal ml-1">(til gode)</span>
+                )}
               </TableCell>
             </TableRow>
           </TableBody>

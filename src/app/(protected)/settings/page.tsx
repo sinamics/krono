@@ -7,7 +7,7 @@ export default async function SettingsPage() {
   const session = await getSession();
   if (!session) redirect("/sign-in");
 
-  const settings = await getSettings(session.userId);
+  const settings = await getSettings(session.organizationId);
 
   return (
     <BusinessInfoForm

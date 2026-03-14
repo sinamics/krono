@@ -12,7 +12,7 @@ export const createSupplier = withAuth(
 
     const supplier = await db.supplier.create({
       data: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         name: data.name,
         country: data.country,
         currency: data.currency,

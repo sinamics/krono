@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/settings", label: "Bedriftsinformasjon" },
+  { href: "/settings/members", label: "Medlemmer" },
   { href: "/settings/ekom", label: "EKOM" },
   { href: "/settings/profile", label: "Profil" },
   { href: "/settings/integrations", label: "Integrasjoner" },
@@ -14,11 +15,12 @@ const navItems = [
 
 export function SettingsNav() {
   const pathname = usePathname();
+  const items = navItems;
 
   return (
     <nav className="w-48 shrink-0">
       <ul className="space-y-1">
-        {navItems.map((item) => (
+        {items.map((item) => (
           <li key={item.href}>
             <Link
               href={item.href}

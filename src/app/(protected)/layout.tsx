@@ -22,7 +22,7 @@ export default async function ProtectedLayout({
   }
 
   const settings = await db.businessSettings.findUnique({
-    where: { userId: session.userId },
+    where: { organizationId: session.organizationId },
     select: { businessName: true },
   });
 

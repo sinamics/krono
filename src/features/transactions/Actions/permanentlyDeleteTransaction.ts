@@ -6,7 +6,7 @@ import { withAuth } from "@/lib/withAuth";
 export const permanentlyDeleteTransaction = withAuth(
   async (auth, id: string) => {
     const existing = await db.transaction.findUnique({ where: { id } });
-    if (!existing || existing.userId !== auth.userId) {
+    if (!existing || existing.organizationId !== auth.organizationId) {
       throw new Error("Transaksjon ikke funnet.");
     }
 

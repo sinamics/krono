@@ -13,8 +13,8 @@ export const syncStripeTransactions = withAuth(
 
     const integration = await db.integration.findUnique({
       where: {
-        userId_provider: {
-          userId: auth.userId,
+        organizationId_provider: {
+          organizationId: auth.organizationId,
           provider: "stripe",
         },
       },
@@ -58,7 +58,7 @@ export const syncStripeTransactions = withAuth(
     const chargeIds = validCharges.flatMap((c) => [c.id, `fee_${c.id}`]);
     const existing = await db.transaction.findMany({
       where: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         externalId: { in: chargeIds },
       },
       select: { externalId: true },
@@ -68,7 +68,7 @@ export const syncStripeTransactions = withAuth(
     // Find or create Stripe supplier
     let stripeSupplier = await db.supplier.findFirst({
       where: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         name: "Stripe",
         type: "FOREIGN",
       },
@@ -77,7 +77,7 @@ export const syncStripeTransactions = withAuth(
     if (!stripeSupplier) {
       stripeSupplier = await db.supplier.create({
         data: {
-          userId: auth.userId,
+          organizationId: auth.organizationId,
           name: "Stripe",
           country: "Irland",
           currency: "EUR",
@@ -90,7 +90,7 @@ export const syncStripeTransactions = withAuth(
     let imported = 0;
     let skipped = 0;
     const errors: string[] = [];
-    let nextBilagsnummer = await getNextBilagsnummer(auth.userId);
+    let nextBilagsnummer = await getNextBilagsnummer(auth.organizationId);
 
     for (const charge of validCharges) {
       const saleId = charge.id;
@@ -126,7 +126,7 @@ export const syncStripeTransactions = withAuth(
           operations.push(
             db.transaction.create({
               data: {
-                userId: auth.userId,
+                organizationId: auth.organizationId,
                 date: chargeDate,
                 description,
                 amount,
@@ -148,7 +148,7 @@ export const syncStripeTransactions = withAuth(
           operations.push(
             db.transaction.create({
               data: {
-                userId: auth.userId,
+                organizationId: auth.organizationId,
                 date: chargeDate,
                 description: `Stripe-gebyr: ${description}`,
                 amount: feeAmount,

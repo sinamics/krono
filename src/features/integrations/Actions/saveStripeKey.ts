@@ -17,13 +17,13 @@ export const saveStripeKey = withAuth(async (auth, formData: unknown) => {
 
   await db.integration.upsert({
     where: {
-      userId_provider: {
-        userId: auth.userId,
+      organizationId_provider: {
+        organizationId: auth.organizationId,
         provider: "stripe",
       },
     },
     create: {
-      userId: auth.userId,
+      organizationId: auth.organizationId,
       provider: "stripe",
       apiKey,
       isActive: true,
@@ -40,7 +40,7 @@ export const saveStripeKey = withAuth(async (auth, formData: unknown) => {
 export const disconnectStripe = withAuth(async (auth) => {
   await db.integration.deleteMany({
     where: {
-      userId: auth.userId,
+      organizationId: auth.organizationId,
       provider: "stripe",
     },
   });

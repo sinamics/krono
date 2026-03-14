@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/format";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -26,7 +27,74 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { Copy, Check, Info } from "lucide-react";
+
+function CopyableValue({
+  value,
+  label,
+}: {
+  value: number;
+  label?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const rounded = Math.round(value);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(String(Math.abs(rounded)));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 font-mono tabular-nums hover:bg-muted transition-colors cursor-copy"
+          >
+            {formatCurrency(value)}
+            {copied ? (
+              <Check className="size-3 text-green-500" />
+            ) : (
+              <Copy className="size-3 text-muted-foreground" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>
+            {copied
+              ? "Kopiert!"
+              : `Klikk for å kopiere${label ? ` (${label})` : ""}`}
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function HelpTip({ text }: { text: string }) {
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="inline size-3.5 text-muted-foreground ml-1 cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+          <p className="text-xs">{text}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 type Props = {
   data: ArsoppgjorData;
@@ -38,10 +106,6 @@ export function ArsoppgjorOverview({ data, year }: Props) {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const [includeHjemmekontor, setIncludeHjemmekontor] = useState(false);
-
-  const hjemmekontorAmount = includeHjemmekontor
-    ? data.hjemmekontorFradrag
-    : 0;
 
   const adjustedNaeringsresultat = includeHjemmekontor
     ? data.naeringsresultat
@@ -56,7 +120,7 @@ export function ArsoppgjorOverview({ data, year }: Props) {
             Årsoppgjør {year}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Tall til skattemeldingen
+            Skattemeldingen
             {data.businessName ? ` — ${data.businessName}` : ""}
             {data.orgNr ? ` (${data.orgNr})` : ""}
           </p>
@@ -78,45 +142,140 @@ export function ArsoppgjorOverview({ data, year }: Props) {
         </Select>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Næringsinntekt
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {formatCurrency(data.totalSales)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Næringskostnader
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {formatCurrency(data.totalExpenses)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Næringsresultat
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {formatCurrency(adjustedNaeringsresultat)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Næringsspesifikasjon */}
+      <Card>
+        <CardHeader>
+          <CardTitle>N&aelig;ringsspesifikasjon</CardTitle>
+          <CardDescription>
+            Driftsinntekter og driftskostnader er forh&aring;ndsutfylt i skattemeldingen
+            fra MVA-meldingene. Kontroller at tallene stemmer, og legg til justeringer.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Forhåndsutfylt fra MVA */}
+          <div>
+            <p className="text-sm font-medium mb-2">Forh&aring;ndsutfylt fra MVA-meldingene</p>
+            <div className="space-y-1 rounded-lg bg-muted/50 p-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Sum driftsinntekter
+                  <HelpTip text="Sum av grunnlaget i kode 52 (salg til utlandet) fra alle MVA-meldingene i året." />
+                </span>
+                <CopyableValue value={data.totalSales} label="Driftsinntekter" />
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  Sum driftskostnader
+                  <HelpTip text="Sum av grunnlaget i kode 1 og kode 86 (kjøp med fradragsrett) fra alle MVA-meldingene i året." />
+                </span>
+                <CopyableValue value={data.totalExpenses} label="Driftskostnader" />
+              </div>
+              <div className="flex justify-between border-t pt-1 font-medium">
+                <span>&Aring;rsresultat</span>
+                <span>{formatCurrency(data.totalSales - data.totalExpenses)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Manuelle justeringer */}
+          <div>
+            <p className="text-sm font-medium mb-2">Justeringer du m&aring; legge til manuelt</p>
+            <div className="space-y-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-4 text-sm">
+              <div className="space-y-1">
+                <div className="flex justify-between">
+                  <span>
+                    EKOM privatandel (tilbakef&oslash;ring)
+                    <HelpTip text="Du har trukket fra 100% av telefon/internett som kostnad, men bruker det også privat. Privatandelen (maks 4 392 kr) må tilbakeføres." />
+                  </span>
+                  <CopyableValue value={data.ekomPrivateDeduction} label="EKOM privatandel" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Konto <span className="font-mono font-medium">7098</span> &mdash; Privat bruk av elektronisk kommunikasjon
+                </p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={includeHjemmekontor}
+                      onChange={(e) => setIncludeHjemmekontor(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>
+                      Hjemmekontor sjablong ({formatCurrency(data.hjemmekontorFradrag)})
+                      <HelpTip text="Fast fradrag for bruk av hjemmekontor. Kryss av hvis du bruker et rom i boligen fast til næringsvirksomhet." />
+                    </span>
+                  </label>
+                  {includeHjemmekontor ? (
+                    <CopyableValue value={data.hjemmekontorFradrag} label="Hjemmekontor" />
+                  ) : (
+                    <span className="text-muted-foreground px-1.5 py-0.5">&mdash;</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Post <span className="font-mono font-medium">7700</span> &mdash; Kostnad lokaler
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Forventet næringsinntekt */}
+          <div className="space-y-1 rounded-lg bg-muted p-4 text-sm">
+            <div className="flex justify-between text-muted-foreground">
+              <span>&Aring;rsresultat</span>
+              <span>{formatCurrency(data.totalSales - data.totalExpenses)}</span>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>+ EKOM privatandel</span>
+              <span>+ {formatCurrency(data.ekomPrivateDeduction)}</span>
+            </div>
+            {includeHjemmekontor && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>- Hjemmekontor sjablong</span>
+                <span>- {formatCurrency(data.hjemmekontorFradrag)}</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t pt-2 font-bold">
+              <span>
+                N&aelig;ringsinntekt = Personinntekt
+                <HelpTip text="Beløpet du bør se under «Næringsinntekt» i skattemeldingen etter justeringene. For ENK er personinntekt lik næringsresultat." />
+              </span>
+              <CopyableValue value={adjustedNaeringsresultat} label="Næringsinntekt" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* EKOM detaljer */}
+      <Card>
+        <CardHeader>
+          <CardTitle>EKOM-detaljer</CardTitle>
+          <CardDescription>
+            Beregning av privatandel for telefon og internett
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Dine EKOM-utgifter i {year}</span>
+              <span>{formatCurrency(data.ekomTotalCost)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Maks privatandel (sjablong)</span>
+              <span>{formatCurrency(4392)}</span>
+            </div>
+            <div className="flex justify-between font-medium border-t pt-2">
+              <span>Privatandel (laveste av de to)</span>
+              <span>{formatCurrency(data.ekomPrivateDeduction)}</span>
+            </div>
+            <div className="flex justify-between font-medium text-destructive">
+              <span>MVA tilbakebetaling (20%)</span>
+              <span>{formatCurrency(data.ekomMvaAdjustment)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Kostnadsoversikt */}
       {data.expensesByCategory.length > 0 && (
@@ -163,72 +322,6 @@ export function ArsoppgjorOverview({ data, year }: Props) {
         </Card>
       )}
 
-      {/* Beregning */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Beregning av næringsresultat</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2 rounded-lg bg-muted p-4 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Næringsinntekt</span>
-              <span>+ {formatCurrency(data.totalSales)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Næringskostnader</span>
-              <span>- {formatCurrency(data.totalExpenses)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                EKOM privatandel (tilbakeføring)
-              </span>
-              <span>+ {formatCurrency(data.ekomPrivateDeduction)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={includeHjemmekontor}
-                  onChange={(e) => setIncludeHjemmekontor(e.target.checked)}
-                  className="rounded"
-                />
-                Hjemmekontor sjablong
-              </label>
-              <span>- {formatCurrency(hjemmekontorAmount)}</span>
-            </div>
-            <div className="flex justify-between border-t pt-2 font-medium">
-              <span>Næringsresultat</span>
-              <span>= {formatCurrency(adjustedNaeringsresultat)}</span>
-            </div>
-          </div>
-
-          {/* EKOM detail */}
-          <div className="space-y-2 rounded-lg border p-4 text-sm">
-            <p className="font-medium">EKOM-justering</p>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                Dine EKOM-utgifter i {year}
-              </span>
-              <span>{formatCurrency(data.ekomTotalCost)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">
-                Maks privatandel (sjablong)
-              </span>
-              <span>{formatCurrency(4392)}</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span>Privatandel (laveste av de to)</span>
-              <span>{formatCurrency(data.ekomPrivateDeduction)}</span>
-            </div>
-            <div className="flex justify-between font-medium text-destructive">
-              <span>MVA tilbakebetaling (20%)</span>
-              <span>{formatCurrency(data.ekomMvaAdjustment)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* MVA årsoversikt */}
       <Card>
         <CardHeader>
@@ -264,23 +357,6 @@ export function ArsoppgjorOverview({ data, year }: Props) {
             <span>MVA totalt {year}</span>
             <span>{formatCurrency(data.mvaTotalYear)}</span>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Personinntekt */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Personinntekt (ENK)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">
-            {formatCurrency(adjustedNaeringsresultat)}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            For enkeltpersonforetak er personinntekt lik næringsresultat
-          </p>
         </CardContent>
       </Card>
     </div>

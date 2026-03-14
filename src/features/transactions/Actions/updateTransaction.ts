@@ -10,11 +10,11 @@ import { isTermLocked } from "@/lib/term-lock";
 export const updateTransaction = withAuth(
   async (auth, id: string, formData: unknown) => {
     const existing = await db.transaction.findUnique({ where: { id } });
-    if (!existing || existing.userId !== auth.userId) {
+    if (!existing || existing.organizationId !== auth.organizationId) {
       throw new Error("Transaksjon ikke funnet.");
     }
 
-    if (await isTermLocked(auth.userId, existing.termPeriod)) {
+    if (await isTermLocked(auth.organizationId, existing.termPeriod)) {
       throw new Error("Denne terminen er levert. Transaksjonen kan ikke endres.");
     }
 

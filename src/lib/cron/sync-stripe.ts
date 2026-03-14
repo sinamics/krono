@@ -4,9 +4,9 @@ import { db } from "@/lib/db";
 import { getTermPeriod } from "@/lib/format";
 import { getNextBilagsnummer } from "@/lib/bilagsnummer";
 
-async function syncStripeForUser(integration: {
+async function syncStripeForOrg(integration: {
   id: string;
-  userId: string;
+  organizationId: string;
   apiKey: string;
   lastSyncAt: Date | null;
 }) {
@@ -54,18 +54,18 @@ async function syncStripeForUser(integration: {
 
   const chargeIds = validCharges.flatMap((c) => [c.id, `fee_${c.id}`]);
   const existing = await db.transaction.findMany({
-    where: { userId: integration.userId, externalId: { in: chargeIds } },
+    where: { organizationId: integration.organizationId, externalId: { in: chargeIds } },
     select: { externalId: true },
   });
   const existingIds = new Set(existing.map((t) => t.externalId));
 
   let stripeSupplier = await db.supplier.findFirst({
-    where: { userId: integration.userId, name: "Stripe", type: "FOREIGN" },
+    where: { organizationId: integration.organizationId, name: "Stripe", type: "FOREIGN" },
   });
   if (!stripeSupplier) {
     stripeSupplier = await db.supplier.create({
       data: {
-        userId: integration.userId,
+        organizationId: integration.organizationId,
         name: "Stripe",
         country: "Irland",
         currency: "EUR",
@@ -77,7 +77,7 @@ async function syncStripeForUser(integration: {
 
   let imported = 0;
   let skipped = 0;
-  let nextBilagsnummer = await getNextBilagsnummer(integration.userId);
+  let nextBilagsnummer = await getNextBilagsnummer(integration.organizationId);
 
   for (const charge of validCharges) {
     const saleId = charge.id;
@@ -109,7 +109,7 @@ async function syncStripeForUser(integration: {
         operations.push(
           db.transaction.create({
             data: {
-              userId: integration.userId,
+              organizationId: integration.organizationId,
               date: chargeDate,
               description,
               amount,
@@ -130,7 +130,7 @@ async function syncStripeForUser(integration: {
         operations.push(
           db.transaction.create({
             data: {
-              userId: integration.userId,
+              organizationId: integration.organizationId,
               date: chargeDate,
               description: `Stripe-gebyr: ${description}`,
               amount: feeAmount,
@@ -177,15 +177,16 @@ export function syncStripe() {
 
       for (const integration of integrations) {
         try {
-          const result = await syncStripeForUser(integration);
+          const result = await syncStripeForOrg(integration);
           if (result.imported > 0) {
-            console.log(
-              `[cron:stripe] User ${integration.userId}: ${result.imported} imported, ${result.skipped} skipped`
+            // biome-ignore lint/suspicious/noConsole: intentional cron job logging
+            console.info(
+              `[cron:stripe] Org ${integration.organizationId}: ${result.imported} imported, ${result.skipped} skipped`
             );
           }
         } catch (err) {
           console.error(
-            `[cron:stripe] Failed for user ${integration.userId}:`,
+            `[cron:stripe] Failed for org ${integration.organizationId}:`,
             err
           );
         }
@@ -196,5 +197,6 @@ export function syncStripe() {
   });
 
   job.start();
-  console.log("[cron:stripe] Scheduled: 1st of every month at 02:00 UTC");
+  // biome-ignore lint/suspicious/noConsole: intentional cron job logging
+  console.info("[cron:stripe] Scheduled: 1st of every month at 02:00 UTC");
 }

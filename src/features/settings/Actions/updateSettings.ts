@@ -7,9 +7,9 @@ import type { SettingsFormData } from "../Schema/settingsSchema";
 export const updateSettings = withAuth(
   async (auth, data: SettingsFormData) => {
     const settings = await db.businessSettings.upsert({
-      where: { userId: auth.userId },
+      where: { organizationId: auth.organizationId },
       create: {
-        userId: auth.userId,
+        organizationId: auth.organizationId,
         orgNr: data.orgNr ?? null,
         businessName: data.businessName ?? null,
         address: data.address ?? null,

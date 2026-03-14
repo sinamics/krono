@@ -14,10 +14,10 @@ export const getAuditLog = withAuth(
   async (auth, transactionId: string): Promise<AuditLogEntry[]> => {
     const transaction = await db.transaction.findUnique({
       where: { id: transactionId },
-      select: { userId: true },
+      select: { organizationId: true },
     });
 
-    if (!transaction || transaction.userId !== auth.userId) {
+    if (!transaction || transaction.organizationId !== auth.organizationId) {
       throw new Error("Transaksjon ikke funnet.");
     }
 

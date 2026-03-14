@@ -36,7 +36,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
   const termPeriod = params.term ? `${year}-${params.term}` : undefined;
 
   const result = await getTransactions({
-    userId: session.userId,
+    organizationId: session.organizationId,
     termPeriod,
     type: params.type,
     mvaCode: params.mvaCode,
@@ -51,10 +51,10 @@ export default async function TransactionsPage({ searchParams }: Props) {
 
   const [suppliers, lockedTermPeriods] = await Promise.all([
     db.supplier.findMany({
-      where: { userId: session.userId },
+      where: { organizationId: session.organizationId },
       orderBy: { name: "asc" },
     }),
-    getLockedTermPeriods(session.userId),
+    getLockedTermPeriods(session.organizationId),
   ]);
 
   return (

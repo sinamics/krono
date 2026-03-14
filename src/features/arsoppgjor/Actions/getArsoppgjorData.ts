@@ -1,7 +1,12 @@
 import { db } from "@/lib/db";
 import { formatTermLabel } from "@/lib/format";
 
-const HJEMMEKONTOR_SJABLONG = 2240;
+const HJEMMEKONTOR_SJABLONG: Record<number, number> = {
+  2024: 2090,
+  2025: 2192,
+  2026: 2240,
+};
+const HJEMMEKONTOR_DEFAULT = 2240;
 const EKOM_SJABLONG_YEARLY = 4392;
 const EKOM_CATEGORIES = [
   "ekom",
@@ -43,13 +48,13 @@ export type ArsoppgjorData = {
 };
 
 export async function getArsoppgjorData(
-  userId: string,
+  organizationId: string,
   year: number
 ): Promise<ArsoppgjorData> {
   const [transactions, mvaTerms, settings] = await Promise.all([
     db.transaction.findMany({
       where: {
-        userId,
+        organizationId,
         date: {
           gte: new Date(year, 0, 1),
           lt: new Date(year + 1, 0, 1),
@@ -58,11 +63,11 @@ export async function getArsoppgjorData(
       },
     }),
     db.mvaTerm.findMany({
-      where: { userId, year },
+      where: { organizationId, year },
       orderBy: { term: "asc" },
     }),
     db.businessSettings.findUnique({
-      where: { userId },
+      where: { organizationId },
     }),
   ]);
 
@@ -101,7 +106,7 @@ export async function getArsoppgjorData(
   const ekomPrivateDeduction = Math.min(ekomTotalCost, EKOM_SJABLONG_YEARLY);
   const ekomMvaAdjustment = ekomPrivateDeduction * 0.2;
 
-  const hjemmekontorFradrag = HJEMMEKONTOR_SJABLONG;
+  const hjemmekontorFradrag = HJEMMEKONTOR_SJABLONG[year] ?? HJEMMEKONTOR_DEFAULT;
 
   const naeringsresultat =
     totalSales - totalExpenses + ekomPrivateDeduction - hjemmekontorFradrag;

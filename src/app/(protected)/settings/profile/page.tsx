@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/withAuth";
 import { ProfileForm } from "@/features/settings/Components/ProfileForm";
 import { ChangePasswordForm } from "@/features/settings/Components/ChangePasswordForm";
+import { PasskeySettings } from "@/features/settings/Components/PasskeySettings";
 
 export default async function ProfilePage() {
   const session = await getSession();
@@ -16,6 +17,7 @@ export default async function ProfilePage() {
         }}
       />
       <ChangePasswordForm />
+      <PasskeySettings />
     </div>
   );
 }

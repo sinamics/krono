@@ -8,7 +8,7 @@ export const updateSupplier = withAuth(
   async (auth, id: string, data: SupplierFormData) => {
     const existing = await db.supplier.findUnique({ where: { id } });
 
-    if (!existing || existing.userId !== auth.userId) {
+    if (!existing || existing.organizationId !== auth.organizationId) {
       throw new Error("Leverandør ikke funnet");
     }
 
