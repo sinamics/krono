@@ -1,7 +1,12 @@
 import { db } from "@/lib/db";
 import { formatTermLabel } from "@/lib/format";
 
-const HJEMMEKONTOR_SJABLONG = 2240;
+const HJEMMEKONTOR_SJABLONG: Record<number, number> = {
+  2024: 2090,
+  2025: 2192,
+  2026: 2240,
+};
+const HJEMMEKONTOR_DEFAULT = 2240;
 const EKOM_SJABLONG_YEARLY = 4392;
 const EKOM_CATEGORIES = [
   "ekom",
@@ -101,7 +106,7 @@ export async function getArsoppgjorData(
   const ekomPrivateDeduction = Math.min(ekomTotalCost, EKOM_SJABLONG_YEARLY);
   const ekomMvaAdjustment = ekomPrivateDeduction * 0.2;
 
-  const hjemmekontorFradrag = HJEMMEKONTOR_SJABLONG;
+  const hjemmekontorFradrag = HJEMMEKONTOR_SJABLONG[year] ?? HJEMMEKONTOR_DEFAULT;
 
   const naeringsresultat =
     totalSales - totalExpenses + ekomPrivateDeduction - hjemmekontorFradrag;
