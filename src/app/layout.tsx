@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Krono - MVA Regnskap",
   description: "MVA-regnskapsprogram for enkeltpersonforetak",
+  icons: {
+    icon: [
+      { url: "/images/logo/logo-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/images/logo/logo-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/images/logo/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -33,7 +34,6 @@ import {
   Settings,
   LogOut,
   FileSpreadsheet,
-  Calculator,
   ChevronsUpDown,
   Moon,
   Sun,
@@ -87,9 +87,13 @@ export function AppSidebar({ user, businessName, ...props }: Props) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Calculator className="size-4" />
-                </div>
+                <Image
+                  src="/images/logo/logo-48x48.png"
+                  alt="Krono"
+                  width={32}
+                  height={32}
+                  className="rounded-lg"
+                />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">{businessName || "Krono"}</span>
                   <span className="text-xs text-muted-foreground">

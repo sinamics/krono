@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Hero } from "@/features/landing/Components/Hero";
@@ -21,7 +22,16 @@ export default async function LandingPage() {
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold">Krono</h1>
+          <div className="flex items-center gap-2">
+            <Image
+              src="/images/logo/logo-48x48.png"
+              alt="Krono"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
+            <h1 className="text-xl font-bold">Krono</h1>
+          </div>
           <div className="flex gap-3">
             <Button variant="ghost" asChild>
               <Link href="/sign-in">Logg inn</Link>
