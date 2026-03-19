@@ -1,6 +1,6 @@
-name: Feature Request
-description: Suggest an idea for Krono
-title: "[Feature Request]: "
+name: Ny funksjonalitet
+description: Foreslå en ny funksjon for Krono
+title: "[Ny funksjonalitet]: "
 labels: ["enhancement"]
 assignees: []
 
@@ -8,40 +8,40 @@ body:
   - type: markdown
     id: instructions
     attributes:
-      value: "## Thank you for your interest in improving Krono! Please provide as much information as possible in the sections below.\n"
+      value: "## Takk for at du vil forbedre Krono! Fyll inn så mye informasjon som mulig i feltene under.\n"
 
   - type: input
     id: feature_short_description
     attributes:
-      label: "Feature Summary"
-      description: "Provide a brief, concise summary of the feature."
+      label: "Kort oppsummering"
+      description: "Gi en kort oppsummering av funksjonen."
     validations:
       required: true
 
   - type: textarea
     id: feature_detailed_description
     attributes:
-      label: "Detailed Description"
-      description: "Describe the proposed feature in detail. Include specifics about what it should do, how it should work, and what the expected benefits are."
+      label: "Detaljert beskrivelse"
+      description: "Beskriv den foreslåtte funksjonen i detalj. Inkluder hva den skal gjøre, hvordan den skal fungere, og hvilke fordeler den gir."
     validations:
       required: false
 
   - type: textarea
     id: use_case
     attributes:
-      label: "Use Case"
-      description: "Describe the specific use case(s) or problem(s) this feature would address."
+      label: "Bruksområde"
+      description: "Beskriv bruksområdet eller problemet denne funksjonen løser."
     validations:
       required: false
 
   - type: dropdown
     id: willing_to_contribute
     attributes:
-      label: "Willing to Contribute"
-      description: "Would you be willing to contribute to the implementation or testing of this feature?"
+      label: "Villig til å bidra"
+      description: "Er du villig til å bidra med utvikling eller testing av denne funksjonen?"
       options:
-        - "Yes, I could help with coding"
-        - "Yes, I could help with testing"
-        - "No, I can only suggest the feature but cannot help in development or testing"
+        - "Ja, jeg kan hjelpe med koding"
+        - "Ja, jeg kan hjelpe med testing"
+        - "Nei, jeg kan kun foreslå funksjonen"
     validations:
       required: false

@@ -1,28 +1,28 @@
-name: Bug Report
-description: Report a bug encountered while using Krono
-title: "[Bug]: "
+name: Feilrapport
+description: Rapporter en feil du har oppdaget i Krono
+title: "[Feil]: "
 labels: ["bug"]
 
 body:
   - type: textarea
     id: bug-description
     attributes:
-      label: "Describe the Bug"
-      description: "A clear and concise description of what the bug is."
+      label: "Beskriv feilen"
+      description: "En tydelig beskrivelse av hva feilen er."
     validations:
       required: true
   - type: textarea
     id: steps-to-reproduce
     attributes:
-      label: "Steps to Reproduce"
-      description: "Steps to reproduce the behavior."
+      label: "Steg for å reprodusere"
+      description: "Beskriv stegene for å gjenskape feilen."
     validations:
       required: true
   - type: dropdown
     id: browser
     attributes:
-      label: "Browser"
-      description: "Which browser are you using?"
+      label: "Nettleser"
+      description: "Hvilken nettleser bruker du?"
       options:
         - Chrome
         - Firefox
@@ -30,14 +30,14 @@ body:
         - Safari
         - Edge
         - Opera
-        - Other
+        - Annen
     validations:
       required: true
   - type: checkboxes
     id: deployment-type
     attributes:
-      label: "Deployment Type"
-      description: "Select the type of Krono deployment you are using."
+      label: "Installasjonstype"
+      description: "Velg hvilken type Krono-installasjon du bruker."
       options:
         - label: Docker
         - label: Standalone
@@ -46,22 +46,22 @@ body:
   - type: textarea
     id: expected-behavior
     attributes:
-      label: "Expected Behavior"
-      description: "A clear and concise description of what you expected to happen."
+      label: "Forventet oppførsel"
+      description: "En tydelig beskrivelse av hva du forventet skulle skje."
     validations:
       required: false
   - type: textarea
     id: docker-logs
     attributes:
-      label: "Krono Logs"
-      description: "Run `docker logs krono` for Docker. Copy and paste the relevant output here. This will be automatically formatted into code, so no need for backticks."
+      label: "Krono-logger"
+      description: "Kjør `docker logs krono` for Docker. Kopier og lim inn relevant logg her. Dette formateres automatisk som kode."
       render: shell
     validations:
       required: false
   - type: textarea
     id: screenshots
     attributes:
-      label: "Screenshots"
-      description: "If applicable, add screenshots to help explain your problem."
+      label: "Skjermbilder"
+      description: "Legg ved skjermbilder hvis det er relevant for å forklare problemet."
     validations:
       required: false
