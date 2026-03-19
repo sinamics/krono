@@ -4,12 +4,12 @@
 
 <h1 align="center">Krono</h1>
 
-<p align="center">Regnskaps- og faktureringsapp bygget med Next.js, Prisma og PostgreSQL.</p>
+<p align="center">Regnskaps og faktureringsapp for ENK.</p>
 
 <p align="center">
   <a href="https://github.com/sinamics/krono/issues/new?labels=bug&template=bug_template.yml&title=%5BBug%5D%3A+">Bug Rapport</a>
   ·
-  <a href="https://github.com/sinamics/krono/issues/new?labels=enhancement&template=feature_request.yml&title=%5BFeature+Request%5D%3A+">Feature Request</a>
+  <a href="https://github.com/sinamics/krono/issues/new?labels=enhancement&template=feature_request.yml&title=%5BFeature+Request%5D%3A+">Ny funksjonalitet</a>
 </p>
 
 ## Kom i gang med Docker Compose
