@@ -39,9 +39,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://krono:krono@db:5432/krono
-      BETTER_AUTH_SECRET: changemeplease
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      DATABASE_URL: postgresql://krono:${POSTGRES_PASSWORD}@db:5432/krono
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3000}
     volumes:
       - uploads_data:/app/public/uploads
     depends_on:
@@ -57,7 +57,7 @@ services:
     environment:
       POSTGRES_DB: krono
       POSTGRES_USER: krono
-      POSTGRES_PASSWORD: krono
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U krono"]
       interval: 5s
@@ -69,10 +69,14 @@ volumes:
   uploads_data:
 ```
 
-### 2. Generer `BETTER_AUTH_SECRET`
+### 2. Generer `.env`
 
 ```bash
-sed -i "s/BETTER_AUTH_SECRET: changemeplease/BETTER_AUTH_SECRET: $(openssl rand -hex 16)/" docker-compose.yml
+cat <<EOF > .env
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+BETTER_AUTH_SECRET=$(openssl rand -hex 16)
+APP_URL=http://localhost:3000
+EOF
 ```
 
 ### 3. Start appen
