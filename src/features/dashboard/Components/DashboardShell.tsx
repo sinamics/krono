@@ -25,7 +25,7 @@ export function DashboardShell({ data, year }: DashboardShellProps) {
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
@@ -53,15 +53,20 @@ export function DashboardShell({ data, year }: DashboardShellProps) {
 
       <DashboardStats yearToDate={data.yearToDate} />
 
-      <MonthlyChart data={data.monthly} year={year} />
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <MonthlyChart data={data.monthly} year={year} />
+        </div>
+        <div className="lg:col-span-2">
+          <RecentTransactions transactions={data.recentTransactions} />
+        </div>
+      </div>
 
       <MvaTermsOverview
         terms={data.allTerms}
         year={year}
         currentTerm={data.currentTerm}
       />
-
-      <RecentTransactions transactions={data.recentTransactions} />
     </div>
   );
 }

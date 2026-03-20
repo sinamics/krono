@@ -2,7 +2,14 @@
 
 import type { transaction } from "@/generated/db/client";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardAction,
+} from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/format";
 
 type RecentTransactionsProps = {
@@ -11,46 +18,66 @@ type RecentTransactionsProps = {
 
 export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Siste transaksjoner</CardTitle>
+        <CardTitle>Siste transaksjoner</CardTitle>
+        <CardAction>
           <Link
             href="/transactions"
-            className="text-sm text-muted-foreground hover:underline"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Se alle
           </Link>
-        </div>
+        </CardAction>
       </CardHeader>
       <CardContent>
         {transactions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Ingen transaksjoner denne terminen.
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            Ingen transaksjoner ennå.
           </p>
         ) : (
-          <div className="space-y-3">
-            {transactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="flex items-center justify-between text-sm"
-              >
-                <div>
-                  <p className="font-medium">{tx.description}</p>
-                  <p className="text-muted-foreground">
-                    {formatDate(tx.date)}
+          <div className="space-y-1">
+            {transactions.map((tx) => {
+              const isSale = tx.type === "SALE";
+              return (
+                <div
+                  key={tx.id}
+                  className="flex items-center gap-3 rounded-lg px-2 py-2 -mx-2 transition-colors hover:bg-accent/50"
+                >
+                  <div
+                    className={`shrink-0 rounded-lg p-2 ${
+                      isSale
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-red-500/10 text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {isSale ? (
+                      <ArrowUpRight className="size-3.5" />
+                    ) : (
+                      <ArrowDownRight className="size-3.5" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">
+                      {tx.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(tx.date)}
+                    </p>
+                  </div>
+                  <p
+                    className={`text-sm font-semibold tabular-nums shrink-0 ${
+                      isSale
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {isSale ? "+" : "-"}
+                    {formatCurrency(Math.abs(tx.amountNOK))}
                   </p>
                 </div>
-                <p
-                  className={`font-medium ${
-                    tx.type === "SALE" ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {tx.type === "SALE" ? "+" : "-"}
-                  {formatCurrency(Math.abs(tx.amountNOK))}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
