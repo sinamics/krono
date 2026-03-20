@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -49,7 +50,7 @@ export function EkomSettingsForm({ defaultValues }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle>EKOM-innstillinger</CardTitle>
         <CardDescription>
@@ -57,9 +58,9 @@ export function EkomSettingsForm({ defaultValues }: Props) {
           Sjablongbeløpet for privat bruk er 4 392 kr/år (366 kr/mnd).
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col">
+          <CardContent className="flex-1 space-y-4">
             <FormField
               control={form.control}
               name="ekomPrivatePercent"
@@ -83,7 +84,6 @@ export function EkomSettingsForm({ defaultValues }: Props) {
                 </FormItem>
               )}
             />
-
             <div className="rounded-lg bg-muted p-4 text-sm space-y-1">
               <p className="font-medium">Om EKOM-fradrag</p>
               <p className="text-muted-foreground">
@@ -93,13 +93,14 @@ export function EkomSettingsForm({ defaultValues }: Props) {
                 (maks 4 392 kr/år).
               </p>
             </div>
-
+          </CardContent>
+          <CardFooter className="border-t pt-4">
             <Button type="submit" disabled={isPending}>
               {isPending ? "Lagrer..." : "Lagre"}
             </Button>
-          </form>
-        </Form>
-      </CardContent>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }

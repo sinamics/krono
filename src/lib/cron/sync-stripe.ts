@@ -181,12 +181,12 @@ export function syncStripe() {
           if (result.imported > 0) {
             // biome-ignore lint/suspicious/noConsole: intentional cron job logging
             console.info(
-              `[cron:stripe] Org ${integration.organizationId}: ${result.imported} imported, ${result.skipped} skipped`
+              `[cron:stripe] Org ${integration.organizationId} (${integration.name}): ${result.imported} imported, ${result.skipped} skipped`
             );
           }
         } catch (err) {
           console.error(
-            `[cron:stripe] Failed for org ${integration.organizationId}:`,
+            `[cron:stripe] Failed for org ${integration.organizationId} (${integration.name}):`,
             err
           );
         }

@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -78,16 +79,16 @@ export function ChangePasswordForm() {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle>Endre passord</CardTitle>
         <CardDescription>
           Oppdater passordet ditt for å holde kontoen sikker.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col">
+          <CardContent className="flex-1 space-y-4">
             <FormField
               control={form.control}
               name="currentPassword"
@@ -127,20 +128,20 @@ export function ChangePasswordForm() {
                 </FormItem>
               )}
             />
-
             {error && <p className="text-sm text-destructive">{error}</p>}
             {success && (
               <p className="text-sm text-green-600 dark:text-green-400">
                 Passordet er endret.
               </p>
             )}
-
+          </CardContent>
+          <CardFooter className="border-t pt-4">
             <Button type="submit" disabled={loading}>
               {loading ? "Endrer..." : "Endre passord"}
             </Button>
-          </form>
-        </Form>
-      </CardContent>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }

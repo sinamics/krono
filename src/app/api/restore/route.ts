@@ -203,12 +203,20 @@ export async function POST(request: NextRequest) {
   // --- Restore integrations ---
   if (data.integrations?.length) {
     for (const integ of data.integrations) {
+      const name = integ.name ?? "Standard";
       await db.integration.upsert({
-        where: { organizationId_provider: { organizationId, provider: integ.provider } },
+        where: {
+          organizationId_provider_name: {
+            organizationId,
+            provider: integ.provider,
+            name,
+          },
+        },
         update: { apiKey: integ.apiKey, isActive: integ.isActive ?? true },
         create: {
           organizationId,
           provider: integ.provider,
+          name,
           apiKey: integ.apiKey,
           isActive: integ.isActive ?? true,
         },

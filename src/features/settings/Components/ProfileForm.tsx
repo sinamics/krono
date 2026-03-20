@@ -10,6 +10,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -74,14 +75,14 @@ export function ProfileForm({ defaultValues }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle>Profil</CardTitle>
         <CardDescription>Oppdater navn og e-postadresse.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col">
+          <CardContent className="flex-1 space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -112,20 +113,20 @@ export function ProfileForm({ defaultValues }: Props) {
                 </FormItem>
               )}
             />
-
             {error && <p className="text-sm text-destructive">{error}</p>}
             {success && (
               <p className="text-sm text-green-600 dark:text-green-400">
                 Profilen er oppdatert.
               </p>
             )}
-
+          </CardContent>
+          <CardFooter className="border-t pt-4">
             <Button type="submit" disabled={loading}>
               {loading ? "Lagrer..." : "Lagre"}
             </Button>
-          </form>
-        </Form>
-      </CardContent>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useReactTable,
   getCoreRowModel,
@@ -64,11 +64,12 @@ type Props = {
 
 export function SupplierList({ suppliers }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [editSupplier, setEditSupplier] = useState<SupplierWithCount | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [globalFilter, setGlobalFilter] = useState(searchParams.get("search") ?? "");
 
   async function handleDelete(id: string) {
     setDeleting(id);

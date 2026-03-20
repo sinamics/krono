@@ -254,12 +254,12 @@ export function syncPaypal() {
           if (result.imported > 0) {
             // biome-ignore lint/suspicious/noConsole: intentional cron job logging
             console.info(
-              `[cron:paypal] Org ${integration.organizationId}: ${result.imported} imported, ${result.skipped} skipped`
+              `[cron:paypal] Org ${integration.organizationId} (${integration.name}): ${result.imported} imported, ${result.skipped} skipped`
             );
           }
         } catch (err) {
           console.error(
-            `[cron:paypal] Failed for org ${integration.organizationId}:`,
+            `[cron:paypal] Failed for org ${integration.organizationId} (${integration.name}):`,
             err
           );
         }

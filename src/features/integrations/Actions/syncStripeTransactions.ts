@@ -9,14 +9,13 @@ import { getNextBilagsnummer } from "@/lib/bilagsnummer";
 
 export const syncStripeTransactions = withAuth(
   async (auth, formData: unknown) => {
-    const { from, to } = syncParamsSchema.parse(formData);
+    const { from, to, integrationId } = syncParamsSchema.parse(formData);
 
-    const integration = await db.integration.findUnique({
+    const integration = await db.integration.findFirst({
       where: {
-        organizationId_provider: {
-          organizationId: auth.organizationId,
-          provider: "stripe",
-        },
+        id: integrationId,
+        organizationId: auth.organizationId,
+        provider: "stripe",
       },
     });
 
@@ -26,7 +25,6 @@ export const syncStripeTransactions = withAuth(
 
     const stripe = new Stripe(integration.apiKey);
 
-    // Fetch all charges in date range with pagination
     const charges: Stripe.Charge[] = [];
     let hasMore = true;
     let startingAfter: string | undefined;
@@ -49,12 +47,10 @@ export const syncStripeTransactions = withAuth(
       }
     }
 
-    // Filter to successful, non-refunded charges
     const validCharges = charges.filter(
       (c) => c.status === "succeeded" && !c.refunded
     );
 
-    // Pre-fetch existing external IDs for deduplication
     const chargeIds = validCharges.flatMap((c) => [c.id, `fee_${c.id}`]);
     const existing = await db.transaction.findMany({
       where: {
@@ -65,7 +61,6 @@ export const syncStripeTransactions = withAuth(
     });
     const existingIds = new Set(existing.map((t) => t.externalId));
 
-    // Find or create Stripe supplier
     let stripeSupplier = await db.supplier.findFirst({
       where: {
         organizationId: auth.organizationId,
@@ -111,13 +106,17 @@ export const syncStripeTransactions = withAuth(
         const currency = charge.currency.toUpperCase();
         const exchangeRate = balanceTx?.exchange_rate ?? 1;
         const amountNOK = amount * exchangeRate;
-        const settlementCurrency = balanceTx?.currency?.toUpperCase() ?? "NOK";
+        const settlementCurrency =
+          balanceTx?.currency?.toUpperCase() ?? "NOK";
         const feeAmount = balanceTx ? balanceTx.fee / 100 : 0;
-        // Fee is already in settlement currency — don't double-convert
         const feeAmountNOK =
-          settlementCurrency === "NOK" ? feeAmount : feeAmount * exchangeRate;
+          settlementCurrency === "NOK"
+            ? feeAmount
+            : feeAmount * exchangeRate;
         const description =
-          charge.description || charge.payment_intent?.toString() || "Stripe-betaling";
+          charge.description ||
+          charge.payment_intent?.toString() ||
+          "Stripe-betaling";
 
         const operations = [];
 
@@ -153,7 +152,8 @@ export const syncStripeTransactions = withAuth(
                 description: `Stripe-gebyr: ${description}`,
                 amount: feeAmount,
                 currency: settlementCurrency,
-                exchangeRate: settlementCurrency === "NOK" ? 1 : exchangeRate,
+                exchangeRate:
+                  settlementCurrency === "NOK" ? 1 : exchangeRate,
                 amountNOK: feeAmountNOK,
                 type: "EXPENSE",
                 mvaCode: "CODE_86",
@@ -179,7 +179,6 @@ export const syncStripeTransactions = withAuth(
       }
     }
 
-    // Update lastSyncAt
     await db.integration.update({
       where: { id: integration.id },
       data: { lastSyncAt: new Date() },

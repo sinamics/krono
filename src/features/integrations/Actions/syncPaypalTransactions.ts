@@ -7,7 +7,10 @@ import { getTermPeriod, calculateAmountNOK } from "@/lib/tax-calculations";
 import { getExchangeRate } from "@/features/transactions/Actions/getExchangeRate";
 import { getNextBilagsnummer } from "@/lib/bilagsnummer";
 
-async function getPaypalAccessToken(clientId: string, secret: string): Promise<string> {
+async function getPaypalAccessToken(
+  clientId: string,
+  secret: string
+): Promise<string> {
   const res = await fetch("https://api-m.paypal.com/v1/oauth2/token", {
     method: "POST",
     headers: {
@@ -30,22 +33,14 @@ type PaypalTransaction = {
     transaction_id: string;
     transaction_event_code: string;
     transaction_status: string;
-    transaction_amount: {
-      currency_code: string;
-      value: string;
-    };
-    fee_amount?: {
-      currency_code: string;
-      value: string;
-    };
+    transaction_amount: { currency_code: string; value: string };
+    fee_amount?: { currency_code: string; value: string };
     transaction_initiation_date: string;
     transaction_subject?: string;
     transaction_note?: string;
   };
   payer_info?: {
-    payer_name?: {
-      alternate_full_name?: string;
-    };
+    payer_name?: { alternate_full_name?: string };
     email_address?: string;
   };
 };
@@ -57,24 +52,23 @@ type PaypalSearchResponse = {
 };
 
 const PAYMENT_EVENT_CODES = new Set([
-  "T0001", // Website payment
-  "T0003", // Preapproved payment
-  "T0006", // Express Checkout
-  "T0007", // Website Payments Standard
-  "T0011", // Web Accept
-  "T0012", // Auction Payment
+  "T0001",
+  "T0003",
+  "T0006",
+  "T0007",
+  "T0011",
+  "T0012",
 ]);
 
 export const syncPaypalTransactions = withAuth(
   async (auth, formData: unknown) => {
-    const { from, to } = syncParamsSchema.parse(formData);
+    const { from, to, integrationId } = syncParamsSchema.parse(formData);
 
-    const integration = await db.integration.findUnique({
+    const integration = await db.integration.findFirst({
       where: {
-        organizationId_provider: {
-          organizationId: auth.organizationId,
-          provider: "paypal",
-        },
+        id: integrationId,
+        organizationId: auth.organizationId,
+        provider: "paypal",
       },
     });
 
@@ -85,18 +79,19 @@ export const syncPaypalTransactions = withAuth(
     const { clientId, secret } = JSON.parse(integration.apiKey);
     const accessToken = await getPaypalAccessToken(clientId, secret);
 
-    // PayPal limits to 31-day windows, chunk the date range
     const chunks: { start: Date; end: Date }[] = [];
     let chunkStart = new Date(from);
     while (chunkStart < to) {
       const chunkEnd = new Date(chunkStart);
       chunkEnd.setDate(chunkEnd.getDate() + 31);
       if (chunkEnd > to) chunkEnd.setTime(to.getTime());
-      chunks.push({ start: new Date(chunkStart), end: new Date(chunkEnd) });
+      chunks.push({
+        start: new Date(chunkStart),
+        end: new Date(chunkEnd),
+      });
       chunkStart = new Date(chunkEnd);
     }
 
-    // Fetch all PayPal transactions
     const allTransactions: PaypalTransaction[] = [];
 
     for (const chunk of chunks) {
@@ -124,7 +119,9 @@ export const syncPaypalTransactions = withAuth(
 
         if (!res.ok) {
           const errText = await res.text();
-          throw new Error(`PayPal API-feil: ${res.status} ${errText}`);
+          throw new Error(
+            `PayPal API-feil: ${res.status} ${errText}`
+          );
         }
 
         const data: PaypalSearchResponse = await res.json();
@@ -134,15 +131,15 @@ export const syncPaypalTransactions = withAuth(
       }
     }
 
-    // Filter: only successful, incoming payments (positive amount = money received)
     const validTransactions = allTransactions.filter(
       (t) =>
         t.transaction_info.transaction_status === "S" &&
-        PAYMENT_EVENT_CODES.has(t.transaction_info.transaction_event_code) &&
+        PAYMENT_EVENT_CODES.has(
+          t.transaction_info.transaction_event_code
+        ) &&
         parseFloat(t.transaction_info.transaction_amount.value) > 0
     );
 
-    // Pre-fetch existing externalIds for deduplication
     const txIds = validTransactions.flatMap((t) => [
       `pp_${t.transaction_info.transaction_id}`,
       `ppfee_${t.transaction_info.transaction_id}`,
@@ -157,7 +154,6 @@ export const syncPaypalTransactions = withAuth(
     });
     const existingIds = new Set(existing.map((t) => t.externalId));
 
-    // Find or create PayPal supplier for fees
     let paypalSupplier = await db.supplier.findFirst({
       where: {
         organizationId: auth.organizationId,
@@ -182,7 +178,9 @@ export const syncPaypalTransactions = withAuth(
     let imported = 0;
     let skipped = 0;
     const errors: string[] = [];
-    let nextBilagsnummer = await getNextBilagsnummer(auth.organizationId);
+    let nextBilagsnummer = await getNextBilagsnummer(
+      auth.organizationId
+    );
 
     for (const tx of validTransactions) {
       const info = tx.transaction_info;
@@ -197,7 +195,9 @@ export const syncPaypalTransactions = withAuth(
       try {
         const txDate = new Date(info.transaction_initiation_date);
         const termPeriod = getTermPeriod(txDate);
-        const amount = Math.abs(parseFloat(info.transaction_amount.value));
+        const amount = Math.abs(
+          parseFloat(info.transaction_amount.value)
+        );
         const currency = info.transaction_amount.currency_code;
         const description =
           info.transaction_subject ||
@@ -210,15 +210,16 @@ export const syncPaypalTransactions = withAuth(
           : 0;
         const feeCurrency = info.fee_amount?.currency_code ?? currency;
 
-        // Fetch exchange rate for non-NOK currencies
-        const exchangeRate = currency === "NOK"
-          ? 1
-          : (await getExchangeRate(currency, txDate)) ?? 1;
-        const feeExchangeRate = feeCurrency === "NOK"
-          ? 1
-          : feeCurrency === currency
-            ? exchangeRate
-            : (await getExchangeRate(feeCurrency, txDate)) ?? 1;
+        const exchangeRate =
+          currency === "NOK"
+            ? 1
+            : ((await getExchangeRate(currency, txDate)) ?? 1);
+        const feeExchangeRate =
+          feeCurrency === "NOK"
+            ? 1
+            : feeCurrency === currency
+              ? exchangeRate
+              : ((await getExchangeRate(feeCurrency, txDate)) ?? 1);
 
         const operations = [];
 
@@ -255,7 +256,10 @@ export const syncPaypalTransactions = withAuth(
                 amount: feeValue,
                 currency: feeCurrency,
                 exchangeRate: feeExchangeRate,
-                amountNOK: calculateAmountNOK(feeValue, feeExchangeRate),
+                amountNOK: calculateAmountNOK(
+                  feeValue,
+                  feeExchangeRate
+                ),
                 type: "EXPENSE",
                 mvaCode: "CODE_86",
                 supplierId: paypalSupplier.id,
@@ -274,12 +278,12 @@ export const syncPaypalTransactions = withAuth(
           skipped++;
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Ukjent feil";
+        const message =
+          err instanceof Error ? err.message : "Ukjent feil";
         errors.push(`${info.transaction_id}: ${message}`);
       }
     }
 
-    // Update lastSyncAt
     await db.integration.update({
       where: { id: integration.id },
       data: { lastSyncAt: new Date() },

@@ -9,14 +9,16 @@ export default async function ProfilePage() {
   if (!session) redirect("/sign-in");
 
   return (
-    <div className="space-y-6">
-      <ProfileForm
-        defaultValues={{
-          name: session.user.name,
-          email: session.user.email,
-        }}
-      />
-      <ChangePasswordForm />
+    <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ProfileForm
+          defaultValues={{
+            name: session.user.name,
+            email: session.user.email,
+          }}
+        />
+        <ChangePasswordForm />
+      </div>
       <PasskeySettings />
     </div>
   );

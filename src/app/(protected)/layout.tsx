@@ -7,6 +7,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { AppSidebar } from "@/features/layout/Components/AppSidebar";
 import { SidebarBreadcrumb } from "@/features/layout/Components/SidebarBreadcrumb";
+import { CommandPalette } from "@/features/search/Components/CommandPalette";
+import { SearchButton } from "@/features/search/Components/SearchButton";
 import { getSession } from "@/lib/withAuth";
 import { db } from "@/lib/db";
 
@@ -43,7 +45,11 @@ export default async function ProtectedLayout({
             className="mr-2 data-[orientation=vertical]:h-4"
           />
           <SidebarBreadcrumb />
+          <div className="ml-auto">
+            <SearchButton />
+          </div>
         </header>
+        <CommandPalette />
         <div className="min-h-0 flex-1 overflow-auto p-4 pt-0">
           {children}
         </div>

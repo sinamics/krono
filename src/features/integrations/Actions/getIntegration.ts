@@ -3,63 +3,66 @@
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/withAuth";
 
-export async function getStripeIntegration() {
-  const session = await getSession();
-  if (!session) return null;
-
-  const integration = await db.integration.findUnique({
-    where: {
-      organizationId_provider: {
-        organizationId: session.organizationId,
-        provider: "stripe",
-      },
-    },
-  });
-
-  if (!integration) return null;
-
-  return {
-    id: integration.id,
-    isActive: integration.isActive,
-    lastSyncAt: integration.lastSyncAt,
-    createdAt: integration.createdAt,
-    maskedKey: `${integration.apiKey.slice(0, 7)}...${integration.apiKey.slice(-4)}`,
-  };
+function maskApiKey(apiKey: string): string {
+  return `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}`;
 }
 
-export type StripeIntegration = Awaited<ReturnType<typeof getStripeIntegration>>;
-
-export async function getPaypalIntegration() {
-  const session = await getSession();
-  if (!session) return null;
-
-  const integration = await db.integration.findUnique({
-    where: {
-      organizationId_provider: {
-        organizationId: session.organizationId,
-        provider: "paypal",
-      },
-    },
-  });
-
-  if (!integration) return null;
-
-  let maskedClientId = "***";
+function maskPaypalKey(apiKey: string): string {
   try {
-    const parsed = JSON.parse(integration.apiKey);
+    const parsed = JSON.parse(apiKey);
     const cid = parsed.clientId as string;
-    maskedClientId = `${cid.slice(0, 7)}...${cid.slice(-4)}`;
+    return `${cid.slice(0, 7)}...${cid.slice(-4)}`;
   } catch {
-    // fallback
+    return "***";
   }
+}
 
-  return {
+export async function getIntegrations(provider: "stripe" | "paypal") {
+  const session = await getSession();
+  if (!session) return [];
+
+  const integrations = await db.integration.findMany({
+    where: {
+      organizationId: session.organizationId,
+      provider,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return integrations.map((integration) => ({
     id: integration.id,
+    name: integration.name,
+    provider: integration.provider,
     isActive: integration.isActive,
     lastSyncAt: integration.lastSyncAt,
     createdAt: integration.createdAt,
-    maskedClientId,
-  };
+    maskedKey:
+      provider === "paypal"
+        ? maskPaypalKey(integration.apiKey)
+        : maskApiKey(integration.apiKey),
+  }));
 }
 
-export type PaypalIntegration = Awaited<ReturnType<typeof getPaypalIntegration>>;
+export type IntegrationItem = Awaited<
+  ReturnType<typeof getIntegrations>
+>[number];
+
+/** Backward-compatible: returns the first integration for a provider */
+export async function getStripeIntegration() {
+  const integrations = await getIntegrations("stripe");
+  return integrations[0] ?? null;
+}
+
+export type StripeIntegration = Awaited<
+  ReturnType<typeof getStripeIntegration>
+>;
+
+/** Backward-compatible: returns the first integration for PayPal */
+export async function getPaypalIntegration() {
+  const integrations = await getIntegrations("paypal");
+  return integrations[0] ?? null;
+}
+
+export type PaypalIntegration = Awaited<
+  ReturnType<typeof getPaypalIntegration>
+>;

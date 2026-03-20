@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -58,16 +59,16 @@ export function BusinessInfoForm({ defaultValues }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle>Bedriftsinformasjon</CardTitle>
         <CardDescription>
           Opplysninger om din enkeltpersonforetak.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-1 flex-col">
+          <CardContent className="flex-1 space-y-4 pb-6">
             <FormField
               control={form.control}
               name="orgNr"
@@ -81,7 +82,6 @@ export function BusinessInfoForm({ defaultValues }: Props) {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="businessName"
@@ -95,7 +95,6 @@ export function BusinessInfoForm({ defaultValues }: Props) {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="address"
@@ -109,7 +108,6 @@ export function BusinessInfoForm({ defaultValues }: Props) {
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="defaultCurrency"
@@ -135,13 +133,14 @@ export function BusinessInfoForm({ defaultValues }: Props) {
                 </FormItem>
               )}
             />
-
+          </CardContent>
+          <CardFooter className="border-t pt-4">
             <Button type="submit" disabled={isPending}>
               {isPending ? "Lagrer..." : "Lagre"}
             </Button>
-          </form>
-        </Form>
-      </CardContent>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 }
