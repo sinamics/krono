@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Trash2, Pencil, Paperclip, Lock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Trash2, Pencil, Paperclip, Lock, ArrowUp, ArrowDown, ArrowUpDown, ArrowUpRight, ArrowDownRight, FileQuestion } from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -15,6 +15,7 @@ import { useRouter as useNextRouter, useSearchParams } from "next/navigation";
 import type { TransactionWithSupplier } from "../Actions/getTransactions";
 import { formatCurrency, formatDate, getMvaCodeLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -40,6 +41,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { deleteTransaction } from "../Actions/deleteTransaction";
 import { deleteTransactions } from "../Actions/deleteTransactions";
 import { TransactionPagination } from "./TransactionPagination";
@@ -63,18 +65,18 @@ function SortableHeader({
   const isActive = currentSort === field;
   return (
     <button
-      className={`flex items-center gap-1 hover:text-foreground ${className ?? ""}`}
+      className={`flex items-center gap-1 hover:text-foreground transition-colors ${className ?? ""}`}
       onClick={() => onSort(field)}
     >
       {label}
       {isActive ? (
         currentOrder === "asc" ? (
-          <ArrowUp className="h-3 w-3" />
+          <ArrowUp className="size-3" />
         ) : (
-          <ArrowDown className="h-3 w-3" />
+          <ArrowDown className="size-3" />
         )
       ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-30" />
+        <ArrowUpDown className="size-3 opacity-30" />
       )}
     </button>
   );
@@ -147,7 +149,7 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
         header: ({ table }) => (
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border"
+            className="size-3.5 rounded border accent-primary"
             checked={table.getIsAllPageRowsSelected()}
             onChange={table.getToggleAllPageRowsSelectedHandler()}
           />
@@ -159,7 +161,7 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
             <div onClick={(e) => e.stopPropagation()}>
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border"
+                className="size-3.5 rounded border accent-primary"
                 checked={row.getIsSelected()}
                 disabled={isLocked}
                 onChange={row.getToggleSelectedHandler()}
@@ -180,7 +182,7 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
           />
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-muted-foreground">
+          <span className="font-mono text-xs text-muted-foreground">
             {row.original.bilagsnummer ?? "—"}
           </span>
         ),
@@ -196,7 +198,11 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
             onSort={handleSort}
           />
         ),
-        cell: ({ row }) => formatDate(row.original.date),
+        cell: ({ row }) => (
+          <span className="text-sm tabular-nums">
+            {formatDate(row.original.date)}
+          </span>
+        ),
       },
       {
         accessorKey: "description",
@@ -210,7 +216,7 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
           />
         ),
         cell: ({ row }) => (
-          <span className="max-w-[200px] truncate block">
+          <span className="max-w-[200px] truncate block text-sm font-medium">
             {row.original.description}
           </span>
         ),
@@ -226,11 +232,21 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
             onSort={handleSort}
           />
         ),
-        cell: ({ row }) => (
-          <Badge variant={row.original.type === "SALE" ? "default" : "secondary"}>
-            {row.original.type === "SALE" ? "Salg" : "Utgift"}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const isSale = row.original.type === "SALE";
+          return (
+            <Badge
+              variant="outline"
+              className={
+                isSale
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
+                  : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30"
+              }
+            >
+              {isSale ? "Salg" : "Utgift"}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "amountNOK",
@@ -244,29 +260,47 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
             className="justify-end"
           />
         ),
-        cell: ({ row }) => (
-          <span className="text-right block">
-            {formatCurrency(row.original.amountNOK)}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const isSale = row.original.type === "SALE";
+          return (
+            <span
+              className={`text-right block text-sm font-medium tabular-nums ${
+                isSale
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-red-600 dark:text-red-400"
+              }`}
+            >
+              {isSale ? "+" : "-"}
+              {formatCurrency(Math.abs(row.original.amountNOK))}
+            </span>
+          );
+        },
       },
       {
         accessorKey: "mvaCode",
         header: () => (
           <SortableHeader
-            label="MVA-kode"
+            label="MVA"
             field="mvaCode"
             currentSort={currentSort}
             currentOrder={currentOrder}
             onSort={handleSort}
           />
         ),
-        cell: ({ row }) => getMvaCodeLabel(row.original.mvaCode),
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {getMvaCodeLabel(row.original.mvaCode)}
+          </span>
+        ),
       },
       {
         id: "supplier",
         header: "Leverandør",
-        cell: ({ row }) => row.original.supplier?.name ?? "-",
+        cell: ({ row }) => (
+          <span className="text-sm">
+            {row.original.supplier?.name ?? "—"}
+          </span>
+        ),
       },
       {
         id: "receipt",
@@ -280,10 +314,10 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
                 rel="noopener noreferrer"
                 title="Se kvittering"
               >
-                <Paperclip className="h-4 w-4 inline text-muted-foreground hover:text-foreground" />
+                <Paperclip className="size-4 inline text-muted-foreground hover:text-foreground transition-colors" />
               </a>
             ) : (
-              "-"
+              <span className="text-muted-foreground/40">—</span>
             )}
           </div>
         ),
@@ -338,16 +372,24 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
 
   if (transactions.length === 0) {
     return (
-      <div className="rounded-md border p-8 text-center text-muted-foreground">
-        Ingen transaksjoner funnet.
-      </div>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+          <FileQuestion className="size-10 text-muted-foreground/50 mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">
+            Ingen transaksjoner funnet
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Prøv å endre filtrene eller opprett en ny transaksjon
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <>
       {selectedCount > 0 && (
-        <div className="flex items-center gap-3 rounded-md border border-destructive/20 bg-destructive/5 p-3">
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 mb-4">
           <p className="flex-1 text-sm">
             {selectedCount} transaksjon{selectedCount > 1 ? "er" : ""} valgt
           </p>
@@ -356,114 +398,135 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
             size="sm"
             onClick={() => setShowBulkDelete(true)}
           >
-            <Trash2 className="mr-1 h-3 w-3" />
+            <Trash2 className="mr-1.5 size-3.5" />
             Slett valgte
           </Button>
         </div>
       )}
 
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow
-              key={row.id}
-              className="cursor-pointer"
-              data-state={row.getIsSelected() ? "selected" : undefined}
-              onClick={() => setSelectedTx(row.original)}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  data-state={row.getIsSelected() ? "selected" : undefined}
+                  onClick={() => setSelectedTx(row.original)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <TransactionPagination page={page} pageSize={pageSize} total={total} />
 
       <Dialog open={!!selectedTx} onOpenChange={() => setSelectedTx(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           {selectedTx && (
             <>
               <DialogHeader>
-                <div className="flex items-center justify-between">
-                  <DialogTitle>{selectedTx.description}</DialogTitle>
-                  <Badge variant={selectedTx.type === "SALE" ? "default" : "secondary"}>
+                <div className="flex items-center justify-between gap-3">
+                  <DialogTitle className="text-lg">{selectedTx.description}</DialogTitle>
+                  <Badge
+                    variant="outline"
+                    className={
+                      selectedTx.type === "SALE"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 shrink-0"
+                        : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30 shrink-0"
+                    }
+                  >
                     {selectedTx.type === "SALE" ? "Salg" : "Utgift"}
                   </Badge>
                 </div>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 {selectedTx.bilagsnummer && (
                   <div>
-                    <p className="text-muted-foreground">Bilagsnummer</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">Bilagsnummer</p>
                     <p className="font-medium font-mono">{selectedTx.bilagsnummer}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-muted-foreground">Beløp (NOK)</p>
-                  <p className="font-medium">{formatCurrency(selectedTx.amountNOK)}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">Beløp (NOK)</p>
+                  <p
+                    className={`font-semibold tabular-nums ${
+                      selectedTx.type === "SALE"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {selectedTx.type === "SALE" ? "+" : "-"}
+                    {formatCurrency(Math.abs(selectedTx.amountNOK))}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Dato</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">Dato</p>
                   <p className="font-medium">{formatDate(selectedTx.date)}</p>
                 </div>
                 {selectedTx.currency !== "NOK" && (
                   <>
                     <div>
-                      <p className="text-muted-foreground">Originalbeløp</p>
+                      <p className="text-xs text-muted-foreground mb-0.5">Originalbeløp</p>
                       <p className="font-medium">{formatCurrency(selectedTx.amount, selectedTx.currency)}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Valutakurs</p>
+                      <p className="text-xs text-muted-foreground mb-0.5">Valutakurs</p>
                       <p className="font-medium">{selectedTx.exchangeRate}</p>
                     </div>
                   </>
                 )}
                 <div>
-                  <p className="text-muted-foreground">MVA-kode</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">MVA-kode</p>
                   <p className="font-medium">{getMvaCodeLabel(selectedTx.mvaCode)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Leverandør</p>
-                  <p className="font-medium">{selectedTx.supplier?.name ?? "-"}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">Leverandør</p>
+                  <p className="font-medium">{selectedTx.supplier?.name ?? "—"}</p>
                 </div>
                 {selectedTx.supplier?.vatId && (
                   <div>
-                    <p className="text-muted-foreground">VAT-ID</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">VAT-ID</p>
                     <p className="font-medium">{selectedTx.supplier.vatId}</p>
                   </div>
                 )}
                 {selectedTx.category && (
                   <div>
-                    <p className="text-muted-foreground">Kategori</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">Kategori</p>
                     <p className="font-medium">{selectedTx.category}</p>
                   </div>
                 )}
                 {selectedTx.notes && (
                   <div className="col-span-2">
-                    <p className="text-muted-foreground">Notater</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">Notater</p>
                     <p className="font-medium">{selectedTx.notes}</p>
                   </div>
                 )}
                 {selectedTx.receiptUrl && (
                   <div>
-                    <p className="text-muted-foreground">Kvittering</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">Kvittering</p>
                     <a
                       href={selectedTx.receiptUrl}
                       target="_blank"
@@ -475,20 +538,24 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
                   </div>
                 )}
               </div>
-              <div className="border-t pt-3 mt-3">
-                <p className="text-sm font-medium mb-2">Endringslogg</p>
+
+              <Separator />
+
+              <div>
+                <p className="text-sm font-medium mb-3">Endringslogg</p>
                 <AuditLog transactionId={selectedTx.id} />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+
+              <div className="flex justify-end gap-2 pt-1">
                 {lockedSet.has(selectedTx.termPeriod) ? (
-                  <Badge variant="secondary" className="gap-1">
+                  <Badge variant="secondary" className="gap-1.5">
                     <Lock className="size-3" />
                     Låst (termin levert)
                   </Badge>
                 ) : (
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/transactions/${selectedTx.id}`}>
-                      <Pencil className="mr-1 h-3 w-3" />
+                      <Pencil className="mr-1.5 size-3.5" />
                       Rediger
                     </Link>
                   </Button>

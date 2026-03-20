@@ -20,7 +20,12 @@ export default async function TrashPage() {
             <ArrowLeft />
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold">Papirkurv</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Papirkurv</h1>
+          <p className="text-sm text-muted-foreground">
+            Slettede transaksjoner som kan gjenopprettes
+          </p>
+        </div>
       </div>
       <TrashList transactions={transactions} />
     </div>

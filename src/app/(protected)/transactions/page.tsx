@@ -60,17 +60,22 @@ export default async function TransactionsPage({ searchParams }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex shrink-0 items-center justify-between">
-        <h1 className="text-2xl font-bold">Transaksjoner</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Transaksjoner</h1>
+          <p className="text-sm text-muted-foreground">
+            Administrer alle transaksjoner og kvitteringer
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href="/transactions/import">
-              <FileUp className="mr-1 h-4 w-4" />
-              Importer faktura
+              <FileUp className="mr-1.5 size-4" />
+              Importer
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href="/transactions/trash">
-              <Trash2 className="mr-1 h-4 w-4" />
+              <Trash2 className="mr-1.5 size-4" />
               Papirkurv
             </Link>
           </Button>

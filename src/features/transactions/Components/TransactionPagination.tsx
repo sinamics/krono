@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -36,16 +37,17 @@ export function TransactionPagination({ page, pageSize, total }: Props) {
 
   return (
     <div className="flex items-center justify-between pt-4">
-      <p className="text-sm text-muted-foreground">
-        Viser {from}–{to} av {total} transaksjoner
+      <p className="text-sm text-muted-foreground tabular-nums">
+        {from}–{to} av {total}
       </p>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <Button
           variant="outline"
           size="sm"
           onClick={() => goToPage(page - 1)}
           disabled={page <= 1}
         >
+          <ChevronLeft className="size-4 mr-1" />
           Forrige
         </Button>
         <Button
@@ -55,6 +57,7 @@ export function TransactionPagination({ page, pageSize, total }: Props) {
           disabled={page >= totalPages}
         >
           Neste
+          <ChevronRight className="size-4 ml-1" />
         </Button>
       </div>
     </div>

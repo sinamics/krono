@@ -52,6 +52,8 @@ export default async function EditTransactionPage({ params }: Props) {
     mvaAmount = transaction.amountNOK * 0.25;
   }
 
+  const isSale = transaction.type === "SALE";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -61,7 +63,7 @@ export default async function EditTransactionPage({ params }: Props) {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Rediger transaksjon</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Rediger transaksjon</h1>
           <p className="text-sm text-muted-foreground">
             Opprettet {formatDate(transaction.createdAt)}
           </p>
@@ -72,68 +74,83 @@ export default async function EditTransactionPage({ params }: Props) {
         {/* Left column: Summary + Receipt */}
         <div className="space-y-6">
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CardTitle className="text-base">Oppsummering</CardTitle>
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/transactions/${transaction.id}/utleggsskjema`}>
-                      <FileText className="mr-1 size-4" />
+                      <FileText className="mr-1.5 size-3.5" />
                       Utleggsskjema
                     </Link>
                   </Button>
                 </div>
-                <Badge variant={transaction.type === "SALE" ? "default" : "secondary"}>
-                  {transaction.type === "SALE" ? "Salg" : "Utgift"}
+                <Badge
+                  variant="outline"
+                  className={
+                    isSale
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
+                      : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30"
+                  }
+                >
+                  {isSale ? "Salg" : "Utgift"}
                 </Badge>
               </div>
               <CardDescription>{transaction.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                 {transaction.bilagsnummer && (
                   <div>
-                    <p className="text-muted-foreground">Bilagsnummer</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">Bilagsnummer</p>
                     <p className="font-medium font-mono">{transaction.bilagsnummer}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-muted-foreground">Beløp (inkl. MVA)</p>
-                  <p className="font-medium">{formatCurrency(transaction.amountNOK)}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">Beløp (inkl. MVA)</p>
+                  <p
+                    className={`font-semibold tabular-nums ${
+                      isSale
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {formatCurrency(transaction.amountNOK)}
+                  </p>
                 </div>
                 {mvaAmount > 0 && (
                   <div>
-                    <p className="text-muted-foreground">MVA-fradrag</p>
-                    <p className="font-medium text-green-600 dark:text-green-400">
+                    <p className="text-xs text-muted-foreground mb-0.5">MVA-fradrag</p>
+                    <p className="font-medium text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(mvaAmount)}
                     </p>
                   </div>
                 )}
                 {mvaAmount > 0 && transaction.mvaCode === "CODE_1" && (
                   <div>
-                    <p className="text-muted-foreground">Netto (eks. MVA)</p>
-                    <p className="font-medium">
+                    <p className="text-xs text-muted-foreground mb-0.5">Netto (eks. MVA)</p>
+                    <p className="font-medium tabular-nums">
                       {formatCurrency(transaction.amountNOK - mvaAmount)}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p className="text-muted-foreground">Dato</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">Dato</p>
                   <p className="font-medium">{formatDate(transaction.date)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">MVA-kode</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">MVA-kode</p>
                   <p className="font-medium">{getMvaCodeLabel(transaction.mvaCode)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Leverandør</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">Leverandør</p>
                   <p className="font-medium">
-                    {transaction.supplier?.name ?? "-"}
+                    {transaction.supplier?.name ?? "—"}
                   </p>
                 </div>
                 {transaction.supplier?.vatId && (
                   <div>
-                    <p className="text-muted-foreground">VAT-ID</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">VAT-ID</p>
                     <p className="font-medium">{transaction.supplier.vatId}</p>
                   </div>
                 )}
@@ -143,14 +160,14 @@ export default async function EditTransactionPage({ params }: Props) {
 
           {transaction.receiptUrl && (
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader>
                 <CardTitle className="text-base">Kvittering</CardTitle>
               </CardHeader>
               <CardContent>
                 {transaction.receiptUrl.endsWith(".pdf") ? (
                   <iframe
                     src={transaction.receiptUrl}
-                    className="h-[600px] w-full rounded border"
+                    className="h-[600px] w-full rounded-lg border"
                     title="Kvittering"
                   />
                 ) : (
@@ -162,7 +179,7 @@ export default async function EditTransactionPage({ params }: Props) {
                     <img
                       src={transaction.receiptUrl}
                       alt="Kvittering"
-                      className="w-full rounded border"
+                      className="w-full rounded-lg border"
                     />
                   </a>
                 )}
@@ -172,7 +189,7 @@ export default async function EditTransactionPage({ params }: Props) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Endringslogg</CardTitle>
+              <CardTitle className="text-base">Endringslogg</CardTitle>
               <CardDescription>
                 Historikk over endringer på denne transaksjonen.
               </CardDescription>
@@ -187,8 +204,10 @@ export default async function EditTransactionPage({ params }: Props) {
         <div>
           {locked ? (
             <Card>
-              <CardContent className="flex items-center gap-3 py-6">
-                <Lock className="size-5 text-muted-foreground" />
+              <CardContent className="flex items-center gap-3 py-8">
+                <div className="shrink-0 rounded-lg bg-muted p-2.5">
+                  <Lock className="size-4 text-muted-foreground" />
+                </div>
                 <div>
                   <p className="text-sm font-medium">Transaksjonen er låst</p>
                   <p className="text-sm text-muted-foreground">

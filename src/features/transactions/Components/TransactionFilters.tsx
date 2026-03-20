@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
 
 type Supplier = {
   id: string;
@@ -30,12 +30,12 @@ type Props = {
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 const terms = [
-  { value: "1", label: "Termin 1 (Jan-Feb)" },
-  { value: "2", label: "Termin 2 (Mar-Apr)" },
-  { value: "3", label: "Termin 3 (Mai-Jun)" },
-  { value: "4", label: "Termin 4 (Jul-Aug)" },
-  { value: "5", label: "Termin 5 (Sep-Okt)" },
-  { value: "6", label: "Termin 6 (Nov-Des)" },
+  { value: "1", label: "T1 (Jan-Feb)" },
+  { value: "2", label: "T2 (Mar-Apr)" },
+  { value: "3", label: "T3 (Mai-Jun)" },
+  { value: "4", label: "T4 (Jul-Aug)" },
+  { value: "5", label: "T5 (Sep-Okt)" },
+  { value: "6", label: "T6 (Nov-Des)" },
 ];
 
 export function TransactionFilters({ suppliers }: Props) {
@@ -68,7 +68,6 @@ export function TransactionFilters({ suppliers }: Props) {
       )
     : suppliers;
 
-  // Focus search input when popover opens
   useEffect(() => {
     if (supplierOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 0);
@@ -78,12 +77,12 @@ export function TransactionFilters({ suppliers }: Props) {
   }, [supplierOpen]);
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2">
       <Select
         value={searchParams.get("year") ?? String(currentYear)}
         onValueChange={(v) => updateParam("year", v)}
       >
-        <SelectTrigger className="w-[120px]">
+        <SelectTrigger className="w-[100px]" size="sm">
           <SelectValue placeholder="År" />
         </SelectTrigger>
         <SelectContent>
@@ -99,7 +98,7 @@ export function TransactionFilters({ suppliers }: Props) {
         value={searchParams.get("term") ?? "ALL"}
         onValueChange={(v) => updateParam("term", v)}
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-[160px]" size="sm">
           <SelectValue placeholder="Alle terminer" />
         </SelectTrigger>
         <SelectContent>
@@ -116,7 +115,7 @@ export function TransactionFilters({ suppliers }: Props) {
         value={searchParams.get("type") ?? "ALL"}
         onValueChange={(v) => updateParam("type", v)}
       >
-        <SelectTrigger className="w-[140px]">
+        <SelectTrigger className="w-[120px]" size="sm">
           <SelectValue placeholder="Alle typer" />
         </SelectTrigger>
         <SelectContent>
@@ -130,7 +129,7 @@ export function TransactionFilters({ suppliers }: Props) {
         value={searchParams.get("mvaCode") ?? "ALL"}
         onValueChange={(v) => updateParam("mvaCode", v)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[150px]" size="sm">
           <SelectValue placeholder="Alle MVA-koder" />
         </SelectTrigger>
         <SelectContent>
@@ -145,7 +144,7 @@ export function TransactionFilters({ suppliers }: Props) {
         value={searchParams.get("source") ?? "ALL"}
         onValueChange={(v) => updateParam("source", v)}
       >
-        <SelectTrigger className="w-[150px]">
+        <SelectTrigger className="w-[130px]" size="sm">
           <SelectValue placeholder="Alle kilder" />
         </SelectTrigger>
         <SelectContent>
@@ -156,19 +155,19 @@ export function TransactionFilters({ suppliers }: Props) {
         </SelectContent>
       </Select>
 
-      {/* Supplier filter with search */}
       <Popover open={supplierOpen} onOpenChange={setSupplierOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={supplierOpen}
-            className="w-[200px] justify-between font-normal"
+            size="sm"
+            className="w-[180px] justify-between font-normal"
           >
             <span className="truncate">
               {selectedSupplier ? selectedSupplier.name : "Alle leverandører"}
             </span>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0" align="start">
@@ -183,28 +182,28 @@ export function TransactionFilters({ suppliers }: Props) {
           </div>
           <div className="max-h-60 overflow-y-auto">
             <button
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent rounded-sm"
               onClick={() => {
                 updateParam("supplierId", "ALL");
                 setSupplierOpen(false);
               }}
             >
               <Check
-                className={`h-4 w-4 ${!selectedSupplierId ? "opacity-100" : "opacity-0"}`}
+                className={`size-3.5 ${!selectedSupplierId ? "opacity-100" : "opacity-0"}`}
               />
               Alle leverandører
             </button>
             {filteredSuppliers.map((s) => (
               <button
                 key={s.id}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent rounded-sm"
                 onClick={() => {
                   updateParam("supplierId", s.id);
                   setSupplierOpen(false);
                 }}
               >
                 <Check
-                  className={`h-4 w-4 ${selectedSupplierId === s.id ? "opacity-100" : "opacity-0"}`}
+                  className={`size-3.5 ${selectedSupplierId === s.id ? "opacity-100" : "opacity-0"}`}
                 />
                 <span className="truncate">{s.name}</span>
               </button>
@@ -218,17 +217,20 @@ export function TransactionFilters({ suppliers }: Props) {
         </PopoverContent>
       </Popover>
 
-      <Input
-        placeholder="Søk beskrivelse, leverandør, beløp..."
-        defaultValue={searchParams.get("search") ?? ""}
-        className="w-[200px]"
-        onChange={(e) => {
-          const timeout = setTimeout(() => {
-            updateParam("search", e.target.value);
-          }, 400);
-          return () => clearTimeout(timeout);
-        }}
-      />
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Søk..."
+          defaultValue={searchParams.get("search") ?? ""}
+          className="w-[180px] pl-8 h-8"
+          onChange={(e) => {
+            const timeout = setTimeout(() => {
+              updateParam("search", e.target.value);
+            }, 400);
+            return () => clearTimeout(timeout);
+          }}
+        />
+      </div>
     </div>
   );
 }

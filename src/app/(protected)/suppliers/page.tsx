@@ -5,7 +5,7 @@ export default async function SuppliersPage() {
   const suppliers = await getSuppliers();
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="flex flex-col gap-6">
       <SupplierList suppliers={suppliers} />
     </div>
   );
