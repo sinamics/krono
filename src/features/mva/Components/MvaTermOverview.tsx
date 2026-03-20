@@ -15,10 +15,11 @@ function getStatus(term: mvaTerm) {
   if (term.status === "SUBMITTED") {
     return {
       label: "Levert",
-      variant: "default" as const,
+      variant: "outline" as const,
       icon: CheckCircle2,
       border: "border-green-500/30",
       iconColor: "text-green-500",
+      badgeClassName: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 text-xs",
     };
   }
   const now = new Date();
@@ -29,6 +30,7 @@ function getStatus(term: mvaTerm) {
       icon: AlertTriangle,
       border: "border-red-500/30",
       iconColor: "text-red-500",
+      badgeClassName: "text-xs",
     };
   }
   return {
@@ -37,6 +39,7 @@ function getStatus(term: mvaTerm) {
     icon: Clock,
     border: "border-border",
     iconColor: "text-muted-foreground",
+    badgeClassName: "text-xs",
   };
 }
 
@@ -50,7 +53,7 @@ export function MvaTermOverview({ terms }: MvaTermOverviewProps) {
   }
 
   return (
-    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
       {terms.map((term) => {
         const status = getStatus(term);
         const Icon = status.icon;
@@ -61,7 +64,7 @@ export function MvaTermOverview({ terms }: MvaTermOverviewProps) {
             href={`/mva?year=${term.year}&term=${term.term}`}
           >
             <Card
-              className={`${status.border} p-4 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer`}
+              className={`${status.border} gap-0 p-4 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -84,7 +87,7 @@ export function MvaTermOverview({ terms }: MvaTermOverviewProps) {
               </p>
 
               <div className="mt-2">
-                <Badge variant={status.variant} className="text-xs">
+                <Badge variant={status.variant} className={status.badgeClassName}>
                   {status.label}
                 </Badge>
               </div>

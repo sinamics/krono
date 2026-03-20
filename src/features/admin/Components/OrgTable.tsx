@@ -8,10 +8,11 @@ import {
   flexRender,
   type ColumnDef,
 } from "@tanstack/react-table";
-import { ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import type { OrgWithStats } from "../Actions/adminActions";
 import { deleteOrganization } from "../Actions/adminActions";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -47,18 +48,18 @@ function SortableHeader({
   const isActive = currentSort === field;
   return (
     <button
-      className="flex items-center gap-1 hover:text-foreground"
+      className="flex items-center gap-1 hover:text-foreground transition-colors"
       onClick={() => onSort(field)}
     >
       {label}
       {isActive ? (
         currentOrder === "asc" ? (
-          <ArrowUp className="h-3 w-3" />
+          <ArrowUp className="size-3" />
         ) : (
-          <ArrowDown className="h-3 w-3" />
+          <ArrowDown className="size-3" />
         )
       ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-30" />
+        <ArrowUpDown className="size-3 opacity-30" />
       )}
     </button>
   );
@@ -200,53 +201,58 @@ export function OrgTable({ organizations, total, page, pageSize, currentOrgId }:
 
   return (
     <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                Ingen organisasjoner funnet.
-              </TableCell>
-            </TableRow>
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                    Ingen organisasjoner funnet.
                   </TableCell>
-                ))}
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                </TableRow>
+              ) : (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Viser {from}–{to} av {total} organisasjoner
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {from}–{to} av {total}
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               variant="outline"
               size="sm"
               onClick={() => goToPage(page - 1)}
               disabled={page <= 1}
             >
+              <ChevronLeft className="size-4 mr-1" />
               Forrige
             </Button>
             <Button
@@ -256,6 +262,7 @@ export function OrgTable({ organizations, total, page, pageSize, currentOrgId }:
               disabled={page >= totalPages}
             >
               Neste
+              <ChevronRight className="size-4 ml-1" />
             </Button>
           </div>
         </div>

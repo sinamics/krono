@@ -85,7 +85,13 @@ export function RegisterForm() {
   }
 
   return (
-    <Card>
+    <>
+      <div className="mb-6 text-center">
+        <img src="/images/logo/krono_logo.png" alt="Krono" className="mx-auto size-12 mb-3" />
+        <h1 className="text-xl font-bold tracking-tight">Krono</h1>
+        <p className="text-sm text-muted-foreground">MVA-regnskap for ENK</p>
+      </div>
+      <Card>
       <CardHeader>
         <CardTitle className="text-2xl">Opprett konto</CardTitle>
         <CardDescription>
@@ -164,5 +170,6 @@ export function RegisterForm() {
         </p>
       </CardFooter>
     </Card>
+    </>
   );
 }

@@ -79,8 +79,8 @@ export default async function MvaPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">MVA-melding</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">MVA-melding</h1>
+        <p className="text-sm text-muted-foreground">
           Beregn og lever MVA-meldinger
         </p>
       </div>

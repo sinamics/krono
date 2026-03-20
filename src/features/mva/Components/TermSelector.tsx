@@ -42,7 +42,7 @@ export function TermSelector({ currentYear, currentTerm }: TermSelectorProps) {
         value={String(currentYear)}
         onValueChange={handleYearChange}
       >
-        <SelectTrigger>
+        <SelectTrigger size="sm" className="w-[100px]">
           <SelectValue placeholder="Velg år" />
         </SelectTrigger>
         <SelectContent>
@@ -58,7 +58,7 @@ export function TermSelector({ currentYear, currentTerm }: TermSelectorProps) {
         value={currentTerm ? String(currentTerm) : "ALL"}
         onValueChange={handleTermChange}
       >
-        <SelectTrigger>
+        <SelectTrigger size="sm" className="w-[180px]">
           <SelectValue placeholder="Velg termin" />
         </SelectTrigger>
         <SelectContent>

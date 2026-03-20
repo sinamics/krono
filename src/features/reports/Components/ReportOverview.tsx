@@ -46,7 +46,7 @@ export function ReportOverview({ reportData, year }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Rapport {year}</h2>
+        <h2 className="text-lg font-semibold">Rapport {year}</h2>
         <Button onClick={handleExport} disabled={isPending} variant="outline">
           {isPending ? "Eksporterer..." : "Eksporter CSV"}
         </Button>
@@ -90,13 +90,13 @@ function MonthlyTable({ data }: { data: ReportData["monthly"] }) {
             {data.map((row) => (
               <TableRow key={row.month}>
                 <TableCell>{row.label}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right text-sm tabular-nums text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(row.sales)}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right text-sm tabular-nums text-red-600 dark:text-red-400">
                   {formatCurrency(row.expenses)}
                 </TableCell>
-                <TableCell className="text-right font-medium">
+                <TableCell className={`text-right text-sm tabular-nums font-medium ${row.netMva >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                   {formatCurrency(row.netMva)}
                 </TableCell>
               </TableRow>
@@ -116,7 +116,10 @@ function TermCards({ data }: { data: ReportData["terms"] }) {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Termin {term.term} - {term.label}</CardTitle>
-              <Badge variant={term.status === "SUBMITTED" ? "default" : "secondary"}>
+              <Badge
+                variant={term.status === "SUBMITTED" ? "outline" : "secondary"}
+                className={term.status === "SUBMITTED" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30" : ""}
+              >
                 {term.status === "SUBMITTED" ? "Sendt" : "Utkast"}
               </Badge>
             </div>
@@ -148,40 +151,40 @@ function TermCards({ data }: { data: ReportData["terms"] }) {
 function AnnualSummary({ data }: { data: ReportData["annual"] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Card>
+      <Card className="gap-0">
         <CardHeader>
           <CardTitle>Totalt salg (Kode 52)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold">{formatCurrency(data.totalSales)}</p>
+          <p className="text-2xl font-bold tabular-nums">{formatCurrency(data.totalSales)}</p>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="gap-0">
         <CardHeader>
           <CardTitle>Utenlandske kjøp (Kode 86)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold">
+          <p className="text-2xl font-bold tabular-nums">
             {formatCurrency(data.totalForeignPurchases)}
           </p>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="gap-0">
         <CardHeader>
           <CardTitle>Norske kjøp (Kode 1)</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold">
+          <p className="text-2xl font-bold tabular-nums">
             {formatCurrency(data.totalNorwegianPurchases)}
           </p>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="gap-0">
         <CardHeader>
           <CardTitle>Total MVA tilbakebetalt</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold">
+          <p className="text-2xl font-bold tabular-nums">
             {formatCurrency(data.totalMvaReturned)}
           </p>
         </CardContent>

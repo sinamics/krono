@@ -11,7 +11,7 @@ export function MissingSuppliers({
   prevTerm,
 }: MissingSuppliersProps) {
   return (
-    <div className="rounded-lg border p-4">
+    <div className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-4">
       <div className="flex items-start gap-3">
         <AlertTriangle className="size-4 text-amber-500 shrink-0 mt-0.5" />
         <div>

@@ -19,7 +19,12 @@ export default async function ReportsPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Rapporter</h1>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Rapporter</h1>
+        <p className="text-sm text-muted-foreground">
+          Finansielle rapporter og oversikter
+        </p>
+      </div>
       <ReportOverview reportData={reportData} year={year} />
       <EkomAdjustmentCalculator totalEkomCost={reportData.totalEkomCost} year={year} />
     </div>

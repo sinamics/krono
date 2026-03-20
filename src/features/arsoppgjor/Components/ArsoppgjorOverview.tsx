@@ -172,7 +172,7 @@ export function ArsoppgjorOverview({ data, year }: Props) {
               </div>
               <div className="flex justify-between border-t pt-1 font-medium">
                 <span>&Aring;rsresultat</span>
-                <span>{formatCurrency(data.totalSales - data.totalExpenses)}</span>
+                <span className="tabular-nums">{formatCurrency(data.totalSales - data.totalExpenses)}</span>
               </div>
             </div>
           </div>
@@ -224,16 +224,16 @@ export function ArsoppgjorOverview({ data, year }: Props) {
           <div className="space-y-1 rounded-lg bg-muted p-4 text-sm">
             <div className="flex justify-between text-muted-foreground">
               <span>&Aring;rsresultat</span>
-              <span>{formatCurrency(data.totalSales - data.totalExpenses)}</span>
+              <span className="tabular-nums">{formatCurrency(data.totalSales - data.totalExpenses)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>+ EKOM privatandel</span>
-              <span>+ {formatCurrency(data.ekomPrivateDeduction)}</span>
+              <span className="tabular-nums">+ {formatCurrency(data.ekomPrivateDeduction)}</span>
             </div>
             {includeHjemmekontor && (
               <div className="flex justify-between text-muted-foreground">
                 <span>- Hjemmekontor sjablong</span>
-                <span>- {formatCurrency(data.hjemmekontorFradrag)}</span>
+                <span className="tabular-nums">- {formatCurrency(data.hjemmekontorFradrag)}</span>
               </div>
             )}
             <div className="flex justify-between border-t pt-2 font-bold">
@@ -259,19 +259,19 @@ export function ArsoppgjorOverview({ data, year }: Props) {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Dine EKOM-utgifter i {year}</span>
-              <span>{formatCurrency(data.ekomTotalCost)}</span>
+              <span className="tabular-nums">{formatCurrency(data.ekomTotalCost)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Maks privatandel (sjablong)</span>
-              <span>{formatCurrency(4392)}</span>
+              <span className="tabular-nums">{formatCurrency(4392)}</span>
             </div>
             <div className="flex justify-between font-medium border-t pt-2">
               <span>Privatandel (laveste av de to)</span>
-              <span>{formatCurrency(data.ekomPrivateDeduction)}</span>
+              <span className="tabular-nums">{formatCurrency(data.ekomPrivateDeduction)}</span>
             </div>
             <div className="flex justify-between font-medium text-destructive">
               <span>MVA tilbakebetaling (20%)</span>
-              <span>{formatCurrency(data.ekomMvaAdjustment)}</span>
+              <span className="tabular-nums">{formatCurrency(data.ekomMvaAdjustment)}</span>
             </div>
           </div>
         </CardContent>
@@ -296,8 +296,8 @@ export function ArsoppgjorOverview({ data, year }: Props) {
                 {data.expensesByCategory.map((cat) => (
                   <TableRow key={cat.category}>
                     <TableCell>{cat.category}</TableCell>
-                    <TableCell className="text-right">{cat.count}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right tabular-nums">{cat.count}</TableCell>
+                    <TableCell className="text-right tabular-nums">
                       {formatCurrency(cat.total)}
                     </TableCell>
                   </TableRow>
@@ -306,13 +306,13 @@ export function ArsoppgjorOverview({ data, year }: Props) {
               <TableFooter>
                 <TableRow>
                   <TableCell className="font-medium">Totalt</TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="text-right font-medium tabular-nums">
                     {data.expensesByCategory.reduce(
                       (sum, c) => sum + c.count,
                       0
                     )}
                   </TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="text-right font-medium tabular-nums">
                     {formatCurrency(data.totalExpenses)}
                   </TableCell>
                 </TableRow>
@@ -339,12 +339,17 @@ export function ArsoppgjorOverview({ data, year }: Props) {
                   <p className="text-xs text-muted-foreground">{t.label}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium tabular-nums">
                     {formatCurrency(t.totalMva)}
                   </span>
                   <Badge
                     variant={
-                      t.status === "SUBMITTED" ? "default" : "secondary"
+                      t.status === "SUBMITTED" ? "outline" : "secondary"
+                    }
+                    className={
+                      t.status === "SUBMITTED"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
+                        : undefined
                     }
                   >
                     {t.status === "SUBMITTED" ? "Sendt" : "Utkast"}
@@ -355,7 +360,7 @@ export function ArsoppgjorOverview({ data, year }: Props) {
           </div>
           <div className="mt-4 flex justify-between rounded-lg bg-muted p-3 text-sm font-medium">
             <span>MVA totalt {year}</span>
-            <span>{formatCurrency(data.mvaTotalYear)}</span>
+            <span className="tabular-nums">{formatCurrency(data.mvaTotalYear)}</span>
           </div>
         </CardContent>
       </Card>
