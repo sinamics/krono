@@ -12,63 +12,87 @@
   <a href="https://github.com/sinamics/krono/issues/new?labels=enhancement&template=feature_request.yml&title=%5BFeature+Request%5D%3A+">Ny funksjonalitet</a>
 </p>
 
+- Registrer og importer transaksjoner manuelt eller fra fil
+- AI-drevet kvitteringsbehandling
+- Automatisk import fra Stripe og PayPal
+- Generer MVA-meldinger per termin
+- Årsoppgjør og finansrapporter
+- Leverandørhåndtering
+- Støtte for flere valutaer med automatiske kurser fra Norges Bank
+- EKOM og hjemmekontor-fradrag
+- Backup og flerbrukerstøtte
+
 ## Kom i gang med Docker Compose
 
 ### Forutsetninger
 
 - [Docker](https://docs.docker.com/get-docker/) og Docker Compose
 
-### 1. Konfigurer miljøvariabler
+### 1. Opprett `docker-compose.yml`
 
-Kopier `.env.example` og fyll inn verdiene:
+```yaml
+services:
+  app:
+    image: ghcr.io/sinamics/krono:latest
+    container_name: krono
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://krono:krono@db:5432/krono
+      BETTER_AUTH_SECRET: changemeplease
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    volumes:
+      - uploads_data:/app/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
 
-```bash
-cp .env.example .env
+  db:
+    image: postgres:16-alpine
+    container_name: krono-db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: krono
+      POSTGRES_USER: krono
+      POSTGRES_PASSWORD: krono
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U krono"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  uploads_data:
 ```
 
-`BETTER_AUTH_SECRET` bør settes til en tilfeldig streng. Du kan generere en med:
+### 2. Generer `BETTER_AUTH_SECRET`
 
 ```bash
-openssl rand -hex 16
+sed -i "s/BETTER_AUTH_SECRET: changemeplease/BETTER_AUTH_SECRET: $(openssl rand -hex 16)/" docker-compose.yml
 ```
 
-### 2. Start appen
+### 3. Start appen
 
 ```bash
 docker compose up -d
 ```
 
-Dette starter:
-
-- **app** — Next.js-appen på port 3000
-- **db** — PostgreSQL 16-database
-
-Databasemigrering kjøres automatisk ved oppstart.
-
-### 3. Åpne appen
-
-Gå til [http://localhost:3000](http://localhost:3000) og opprett en bruker.
-
-### Stopp appen
-
-```bash
-docker compose down
-```
-
-For å slette alle data (database og opplastinger):
-
-```bash
-docker compose down -v
-```
+Databasemigrering kjøres automatisk ved oppstart. Gå til [http://localhost:3000](http://localhost:3000) og opprett en bruker.
 
 ## Utvikling
 
+Prosjektet bruker [Dev Containers](https://containers.dev/). Åpne repoet i VS Code og velg **"Reopen in Container"**. Kjør deretter inne i containeren:
+
 ```bash
 npm install
-npx prisma generate
+npx prisma migrate dev
 npm run dev
 ```
 
 ## Lisens
 
-MIT
+GPL-3.0
