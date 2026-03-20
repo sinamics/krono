@@ -40,6 +40,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { deleteTransaction } from "../Actions/deleteTransaction";
@@ -421,20 +428,66 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cursor-pointer"
-                  data-state={row.getIsSelected() ? "selected" : undefined}
-                  onClick={() => setSelectedTx(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {table.getRowModel().rows.map((row) => {
+                const isLocked = lockedSet.has(row.original.termPeriod);
+                return (
+                  <ContextMenu key={row.id}>
+                    <ContextMenuTrigger asChild>
+                      <TableRow
+                        className="cursor-pointer"
+                        data-state={row.getIsSelected() ? "selected" : undefined}
+                        onClick={() => setSelectedTx(row.original)}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      <ContextMenuItem onClick={() => setSelectedTx(row.original)}>
+                        <FileQuestion className="size-3.5 mr-2" />
+                        Detaljer
+                      </ContextMenuItem>
+                      {!isLocked && (
+                        <ContextMenuItem asChild>
+                          <Link href={`/transactions/${row.original.id}`}>
+                            <Pencil className="size-3.5 mr-2" />
+                            Rediger
+                          </Link>
+                        </ContextMenuItem>
+                      )}
+                      {row.original.receiptUrl && (
+                        <ContextMenuItem asChild>
+                          <a href={row.original.receiptUrl} target="_blank" rel="noopener noreferrer">
+                            <Paperclip className="size-3.5 mr-2" />
+                            Se kvittering
+                          </a>
+                        </ContextMenuItem>
+                      )}
+                      {!isLocked && (
+                        <>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setDeleteId(row.original.id)}
+                          >
+                            <Trash2 className="size-3.5 mr-2" />
+                            Slett
+                          </ContextMenuItem>
+                        </>
+                      )}
+                      {isLocked && (
+                        <ContextMenuItem disabled>
+                          <Lock className="size-3.5 mr-2" />
+                          Låst (termin levert)
+                        </ContextMenuItem>
+                      )}
+                    </ContextMenuContent>
+                  </ContextMenu>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

@@ -140,7 +140,7 @@ export const globalSearch = withAuth(
         title: s.name,
         subtitle: [s.orgNr, s.country].filter(Boolean).join(" - "),
         category: "supplier" as const,
-        href: `/suppliers?search=${encodeURIComponent(s.name)}`,
+        href: `/suppliers/${s.id}`,
       })),
       pages,
     };

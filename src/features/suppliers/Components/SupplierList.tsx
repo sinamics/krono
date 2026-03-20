@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   useReactTable,
   getCoreRowModel,
@@ -46,6 +47,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
   Pencil,
   Trash2,
   Plus,
@@ -56,6 +64,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 
 type Props = {
@@ -297,17 +306,40 @@ export function SupplierList({ suppliers }: Props) {
                     </TableRow>
                   ) : (
                     table.getRowModel().rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        className="cursor-pointer"
-                        onClick={() => setEditSupplier(row.original)}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        ))}
-                      </TableRow>
+                      <ContextMenu key={row.id}>
+                        <ContextMenuTrigger asChild>
+                          <TableRow
+                            className="cursor-pointer"
+                            onClick={() => setEditSupplier(row.original)}
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell key={cell.id}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuItem onClick={() => setEditSupplier(row.original)}>
+                            <Pencil className="size-3.5 mr-2" />
+                            Hurtigredigering
+                          </ContextMenuItem>
+                          <ContextMenuItem asChild>
+                            <Link href={`/suppliers/${row.original.id}`}>
+                              <ExternalLink className="size-3.5 mr-2" />
+                              Åpne leverandør
+                            </Link>
+                          </ContextMenuItem>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(row.original.id)}
+                          >
+                            <Trash2 className="size-3.5 mr-2" />
+                            Slett
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     ))
                   )}
                 </TableBody>
