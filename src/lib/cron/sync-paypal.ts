@@ -193,6 +193,7 @@ async function syncPaypalForOrg(integration: {
               mvaCode: "CODE_52",
               termPeriod,
               externalId: saleId,
+              integrationId: integration.id,
               bilagsnummer: nextBilagsnummer++,
             },
           })
@@ -215,6 +216,7 @@ async function syncPaypalForOrg(integration: {
               supplierId: paypalSupplier.id,
               termPeriod,
               externalId: feeId,
+              integrationId: integration.id,
               bilagsnummer: nextBilagsnummer++,
             },
           })

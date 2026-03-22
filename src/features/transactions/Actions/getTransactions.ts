@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
-import type { Prisma, transaction, supplier } from "@/generated/db/client";
+import type { Prisma, transaction, supplier, integration } from "@/generated/db/client";
 
 export type TransactionWithSupplier = transaction & {
   supplier: supplier | null;
+  integration: Pick<integration, "id" | "name" | "provider"> | null;
 };
 
 export type PaginatedTransactions = {
@@ -100,7 +101,10 @@ export async function getTransactions(filters: TransactionFilters): Promise<Pagi
   const [data, total] = await Promise.all([
     db.transaction.findMany({
       where,
-      include: { supplier: true },
+      include: {
+        supplier: true,
+        integration: { select: { id: true, name: true, provider: true } },
+      },
       orderBy: { [sortBy]: sortOrder },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -114,7 +118,10 @@ export async function getTransactions(filters: TransactionFilters): Promise<Pagi
 export async function getTransactionById(id: string, organizationId: string) {
   const transaction = await db.transaction.findUnique({
     where: { id },
-    include: { supplier: true },
+    include: {
+      supplier: true,
+      integration: { select: { id: true, name: true, provider: true } },
+    },
   });
 
   if (!transaction || transaction.organizationId !== organizationId || transaction.deletedAt) {

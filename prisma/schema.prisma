@@ -126,6 +126,8 @@ model transaction {
   notes          String?
   termPeriod     String // e.g. "2025-6" for Nov-Dec 2025
   externalId     String?
+  integrationId  String?
+  integration    integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
   bilagsnummer   Int?
   deletedAt      DateTime?
   createdAt      DateTime     @default(now())
@@ -189,16 +191,17 @@ model mvaTerm {
 }
 
 model integration {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   organizationId String
-  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   provider       String // "stripe" or "paypal"
-  name           String       @default("Standard")
+  name           String        @default("Standard")
   apiKey         String
-  isActive       Boolean      @default(true)
+  isActive       Boolean       @default(true)
   lastSyncAt     DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  transactions   transaction[]
 
   @@unique([organizationId, provider, name])
 }

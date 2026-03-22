@@ -310,6 +310,23 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
         ),
       },
       {
+        id: "source",
+        header: "Kilde",
+        cell: ({ row }) => {
+          const integration = row.original.integration;
+          if (!integration) return <span className="text-muted-foreground/40 text-sm">—</span>;
+          const provider = integration.provider === "stripe" ? "Stripe" : "PayPal";
+          return (
+            <Badge
+              variant="outline"
+              className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30 text-xs"
+            >
+              {integration.name} – {provider}
+            </Badge>
+          );
+        },
+      },
+      {
         id: "receipt",
         header: () => <span className="flex justify-center">Kvittering</span>,
         cell: ({ row }) => (
@@ -563,6 +580,17 @@ export function TransactionList({ transactions, total, page, pageSize, lockedTer
                   <div>
                     <p className="text-xs text-muted-foreground mb-0.5">VAT-ID</p>
                     <p className="font-medium">{selectedTx.supplier.vatId}</p>
+                  </div>
+                )}
+                {selectedTx.integration && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-0.5">Kilde</p>
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30"
+                    >
+                      {selectedTx.integration.name} – {selectedTx.integration.provider === "stripe" ? "Stripe" : "PayPal"}
+                    </Badge>
                   </div>
                 )}
                 {selectedTx.category && (

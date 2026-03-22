@@ -43,27 +43,9 @@ export default async function EditTransactionPage({ params }: Props) {
   });
 
   // Resolve integration source label
-  let integrationLabel: string | null = null;
-  if (transaction.externalId) {
-    const provider =
-      transaction.externalId.startsWith("ch_") || transaction.externalId.startsWith("fee_")
-        ? "stripe"
-        : transaction.externalId.startsWith("pp_") || transaction.externalId.startsWith("ppfee_")
-          ? "paypal"
-          : null;
-
-    if (provider) {
-      const integrations = await db.integration.findMany({
-        where: { organizationId: session.organizationId, provider },
-        select: { name: true },
-      });
-      const providerName = provider === "stripe" ? "Stripe" : "PayPal";
-      integrationLabel =
-        integrations.length === 1
-          ? `${integrations[0].name} – ${providerName}`
-          : providerName;
-    }
-  }
+  const integrationLabel = transaction.integration
+    ? `${transaction.integration.name} – ${transaction.integration.provider === "stripe" ? "Stripe" : "PayPal"}`
+    : null;
 
   // Calculate MVA amount for this transaction
   let mvaAmount = 0;

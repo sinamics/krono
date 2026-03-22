@@ -120,6 +120,7 @@ async function syncStripeForOrg(integration: {
               mvaCode: "CODE_52",
               termPeriod,
               externalId: saleId,
+              integrationId: integration.id,
               bilagsnummer: nextBilagsnummer++,
             },
           })
@@ -142,6 +143,7 @@ async function syncStripeForOrg(integration: {
               supplierId: stripeSupplier.id,
               termPeriod,
               externalId: feeId,
+              integrationId: integration.id,
               bilagsnummer: nextBilagsnummer++,
             },
           })

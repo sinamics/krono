@@ -239,6 +239,7 @@ export const syncPaypalTransactions = withAuth(
                 mvaCode: "CODE_52",
                 termPeriod,
                 externalId: saleId,
+                integrationId: integration.id,
                 bilagsnummer,
               },
             })
@@ -265,6 +266,7 @@ export const syncPaypalTransactions = withAuth(
                 supplierId: paypalSupplier.id,
                 termPeriod,
                 externalId: feeId,
+                integrationId: integration.id,
                 bilagsnummer,
               },
             })
