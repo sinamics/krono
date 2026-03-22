@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Clock, Pencil } from "lucide-react";
+import { Trash2, Clock, Pencil, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { disconnectPaypal, updatePaypalKey } from "../Actions/savePaypalKey";
+import { syncPaypalTransactions } from "../Actions/syncPaypalTransactions";
+import { SyncForm } from "./SyncForm";
 import type { IntegrationItem } from "../Actions/getIntegration";
+import type { SyncParamsFormData } from "../Schema/integrationSchema";
 
 interface PaypalAccountRowProps {
   account: IntegrationItem;
@@ -40,6 +43,13 @@ export function PaypalAccountRow({ account }: PaypalAccountRowProps) {
   const [editSecret, setEditSecret] = useState("");
   const [editError, setEditError] = useState("");
   const [isSaving, startSaveTransition] = useTransition();
+  const [syncOpen, setSyncOpen] = useState(false);
+
+  async function handleSync(data: SyncParamsFormData) {
+    const result = await syncPaypalTransactions(data);
+    router.refresh();
+    return result;
+  }
 
   function handleDelete() {
     startDeleteTransition(async () => {
@@ -96,6 +106,14 @@ export function PaypalAccountRow({ account }: PaypalAccountRowProps) {
           <Button
             variant="ghost"
             size="icon-xs"
+            onClick={() => setSyncOpen(!syncOpen)}
+            title="Synkroniser"
+          >
+            <RefreshCw className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={() => {
               setEditName(account.name);
               setEditClientId("");
@@ -133,6 +151,12 @@ export function PaypalAccountRow({ account }: PaypalAccountRowProps) {
           </AlertDialog>
         </div>
       </div>
+
+      {syncOpen && (
+        <div className="py-3 px-1 border-b">
+          <SyncForm integrationId={account.id} onSync={handleSync} />
+        </div>
+      )}
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
