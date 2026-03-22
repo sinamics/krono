@@ -42,6 +42,29 @@ export default async function EditTransactionPage({ params }: Props) {
     orderBy: { name: "asc" },
   });
 
+  // Resolve integration source label
+  let integrationLabel: string | null = null;
+  if (transaction.externalId) {
+    const provider =
+      transaction.externalId.startsWith("ch_") || transaction.externalId.startsWith("fee_")
+        ? "stripe"
+        : transaction.externalId.startsWith("pp_") || transaction.externalId.startsWith("ppfee_")
+          ? "paypal"
+          : null;
+
+    if (provider) {
+      const integrations = await db.integration.findMany({
+        where: { organizationId: session.organizationId, provider },
+        select: { name: true },
+      });
+      const providerName = provider === "stripe" ? "Stripe" : "PayPal";
+      integrationLabel =
+        integrations.length === 1
+          ? `${integrations[0].name} – ${providerName}`
+          : providerName;
+    }
+  }
+
   // Calculate MVA amount for this transaction
   let mvaAmount = 0;
   if (transaction.mvaCode === "CODE_1") {
@@ -85,16 +108,26 @@ export default async function EditTransactionPage({ params }: Props) {
                     </Link>
                   </Button>
                 </div>
-                <Badge
-                  variant="outline"
-                  className={
-                    isSale
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
-                      : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30"
-                  }
-                >
-                  {isSale ? "Salg" : "Utgift"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {integrationLabel && (
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30"
+                    >
+                      {integrationLabel}
+                    </Badge>
+                  )}
+                  <Badge
+                    variant="outline"
+                    className={
+                      isSale
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
+                        : "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/30"
+                    }
+                  >
+                    {isSale ? "Salg" : "Utgift"}
+                  </Badge>
+                </div>
               </div>
               <CardDescription>{transaction.description}</CardDescription>
             </CardHeader>
