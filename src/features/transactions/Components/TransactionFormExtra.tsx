@@ -155,6 +155,7 @@ export function OptionalFields({ form }: FormProps) {
                 <SelectItem value="Forsikring">Forsikring</SelectItem>
                 <SelectItem value="Regnskap">Regnskap</SelectItem>
                 <SelectItem value="Markedsføring">Markedsføring</SelectItem>
+                <SelectItem value="Betalingsgebyr">Betalingsgebyr</SelectItem>
                 <SelectItem value="Annet">Annet</SelectItem>
               </SelectContent>
             </Select>

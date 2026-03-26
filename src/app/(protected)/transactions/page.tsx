@@ -9,6 +9,7 @@ import { TransactionList } from "@/features/transactions/Components/TransactionL
 import { NewTransactionDialog } from "@/features/transactions/Components/NewTransactionDialog";
 import { getLockedTermPeriods } from "@/lib/term-lock";
 import { Button } from "@/components/ui/button";
+import { CategorizeFeesButton } from "@/features/transactions/Components/CategorizeFeesButton";
 
 type Props = {
   searchParams: Promise<{
@@ -49,12 +50,24 @@ export default async function TransactionsPage({ searchParams }: Props) {
     page,
   });
 
-  const [suppliers, lockedTermPeriods] = await Promise.all([
+  const [suppliers, lockedTermPeriods, uncategorizedFeeCount] = await Promise.all([
     db.supplier.findMany({
       where: { organizationId: session.organizationId },
       orderBy: { name: "asc" },
     }),
     getLockedTermPeriods(session.organizationId),
+    db.transaction.count({
+      where: {
+        organizationId: session.organizationId,
+        type: "EXPENSE",
+        deletedAt: null,
+        category: null,
+        OR: [
+          { description: { startsWith: "Stripe-gebyr" } },
+          { description: { startsWith: "PayPal-gebyr" } },
+        ],
+      },
+    }),
   ]);
 
   return (
@@ -79,6 +92,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
               Papirkurv
             </Link>
           </Button>
+          <CategorizeFeesButton count={uncategorizedFeeCount} />
           <NewTransactionDialog suppliers={suppliers} />
         </div>
       </div>

@@ -40,6 +40,7 @@ function getPostForCategory(category: string): string {
     Reise: "7080",
     Forsikring: "7500",
     Markedsføring: "7330",
+    Betalingsgebyr: "7770",
   };
   if (direct[category]) return direct[category];
   if (EKOM_KEYS.includes(category.toLowerCase())) return "6995";
