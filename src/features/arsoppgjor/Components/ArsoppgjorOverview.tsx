@@ -155,23 +155,22 @@ function is6995(category: string) {
   return getPostMapping(category).post === "6995";
 }
 
-function SkattemeldingGuideCard({ data }: { data: ArsoppgjorData }) {
-  const [expanded, setExpanded] = useState<string | null>(null);
-
-  const post6995Categories = data.expensesByCategory.filter((c) =>
-    is6995(c.category)
-  );
-  const otherCategories = data.expensesByCategory.filter(
-    (c) => !is6995(c.category)
-  );
-  const sorted = [...post6995Categories, ...otherCategories];
-
-  const post6995Total = post6995Categories.reduce(
-    (sum, c) => sum + c.total,
-    0
-  );
-
-  const post6995EksMva = post6995Categories.reduce(
+function PostTable({
+  title,
+  post,
+  categories,
+  expanded,
+  setExpanded,
+  extraItems,
+}: {
+  title: string;
+  post: string;
+  categories: ArsoppgjorData["expensesByCategory"];
+  expanded: string | null;
+  setExpanded: (v: string | null) => void;
+  extraItems?: { label: string; amount: number }[];
+}) {
+  const eksMvaTotal = categories.reduce(
     (sum, c) =>
       sum +
       c.transactions.reduce(
@@ -181,194 +180,66 @@ function SkattemeldingGuideCard({ data }: { data: ArsoppgjorData }) {
     0
   );
 
-  let lastPost = "";
+  const extraTotal = (extraItems ?? []).reduce((s, e) => s + e.amount, 0);
+  const grandTotal = eksMvaTotal + extraTotal;
+
+  if (categories.length === 0 && !extraItems?.length) return null;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Hvor f&oslash;rer du hva i skattemeldingen?</CardTitle>
-        <CardDescription>
-          Kategoriene fra kostnadsoversikten din fordelt p&aring; riktig post i
-          skattemeldingen for n&aelig;ringsdrivende (ENK).
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8" />
-              <TableHead>Kategori</TableHead>
-              <TableHead>Post</TableHead>
-              <TableHead className="hidden sm:table-cell">
-                Felt i skattemeldingen
-              </TableHead>
-              <TableHead className="text-right">Bel&oslash;p</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sorted.map((cat) => {
-              const mapping = getPostMapping(cat.category);
-              const showPostDivider = mapping.post !== lastPost;
-              lastPost = mapping.post;
-              const isExpanded = expanded === cat.category;
-              return (
-                <>
-                  <TableRow
-                    key={cat.category}
-                    className={`cursor-pointer hover:bg-muted/50 ${
-                      showPostDivider ? "border-t-2" : ""
-                    }`}
-                    onClick={() =>
-                      setExpanded(isExpanded ? null : cat.category)
-                    }
-                  >
-                    <TableCell className="w-8 pr-0">
-                      <ChevronRight
-                        className={`size-4 text-muted-foreground transition-transform ${
-                          isExpanded ? "rotate-90" : ""
-                        }`}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <span>{cat.category}</span>
-                      {mapping.note && <HelpTip text={mapping.note} />}
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-mono text-xs">
-                        {mapping.post}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs hidden sm:table-cell">
-                      {mapping.felt}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(cat.total)}
-                    </TableCell>
-                  </TableRow>
-                  {isExpanded &&
-                    cat.transactions.map((tx) => {
-                      const mva = getMvaForTransaction(tx.amountNOK, tx.mvaCode);
-                      return (
-                        <TableRow
-                          key={tx.id}
-                          className="bg-muted/30 text-sm group"
-                        >
-                          <TableCell />
-                          <TableCell
-                            colSpan={2}
-                            className="text-muted-foreground"
-                          >
-                            <Link
-                              href={`/transactions/${tx.id}`}
-                              className="flex items-center gap-1 hover:text-foreground transition-colors"
-                            >
-                              <span className="font-mono text-xs">
-                                {formatDate(tx.date)}
-                              </span>
-                              <span className="ml-1">{tx.description}</span>
-                              {tx.notes && (
-                                <span className="text-xs text-muted-foreground/70">
-                                  ({tx.notes})
-                                </span>
-                              )}
-                              <ExternalLink className="size-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </Link>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell text-right tabular-nums text-muted-foreground text-xs">
-                            {mva > 0 ? (
-                              <div>
-                                <div>MVA {formatCurrency(mva)}</div>
-                                <div className="text-muted-foreground/70">
-                                  Eks. MVA {formatCurrency(getEksMvaForTransaction(tx.amountNOK, tx.mvaCode))}
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-amber-500">Ingen MVA</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums text-muted-foreground">
-                            {formatCurrency(tx.amountNOK)}
-                            {isAmountInklMva(tx.mvaCode) && (
-                              <div className="text-xs text-muted-foreground/70">inkl. MVA</div>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </>
-              );
-            })}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell />
-              <TableCell className="font-medium">
-                Sum post 6995 (eks. MVA)
-                <HelpTip text="Dette er bel&oslash;pet du f&oslash;rer i post 6995 i skattemeldingen. MVA er trukket fra fordi du allerede f&aring;r MVA-fradrag via MVA-meldingen." />
-              </TableCell>
-              <TableCell>
-                <span className="font-mono text-xs">6995</span>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell" />
-              <TableCell className="text-right font-medium tabular-nums">
-                <CopyableValue value={post6995EksMva} label="Sum post 6995" />
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-}
-
-function KostnadsoversiktCard({ data }: { data: ArsoppgjorData }) {
-  const [expanded, setExpanded] = useState<string | null>(null);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Kostnadsoversikt</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8" />
-              <TableHead>Kategori</TableHead>
-              <TableHead className="text-right">Antall</TableHead>
-              <TableHead className="text-right">Bel&oslash;p</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.expensesByCategory.map((cat) => (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold">
+        Post {post} &mdash; {title}
+      </h3>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-8" />
+            <TableHead>Kategori</TableHead>
+            <TableHead className="hidden sm:table-cell text-right">MVA</TableHead>
+            <TableHead className="text-right">Eks. MVA</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {categories.map((cat) => {
+            const isExpanded = expanded === cat.category;
+            const catEksMva = cat.transactions.reduce(
+              (s, tx) => s + getEksMvaForTransaction(tx.amountNOK, tx.mvaCode),
+              0
+            );
+            const catMva = cat.transactions.reduce(
+              (s, tx) => s + getMvaForTransaction(tx.amountNOK, tx.mvaCode),
+              0
+            );
+            return (
               <>
                 <TableRow
                   key={cat.category}
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() =>
-                    setExpanded(
-                      expanded === cat.category ? null : cat.category
-                    )
+                    setExpanded(isExpanded ? null : cat.category)
                   }
                 >
                   <TableCell className="w-8 pr-0">
                     <ChevronRight
                       className={`size-4 text-muted-foreground transition-transform ${
-                        expanded === cat.category ? "rotate-90" : ""
+                        isExpanded ? "rotate-90" : ""
                       }`}
                     />
                   </TableCell>
                   <TableCell className="font-medium">
                     {cat.category}
+                    <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                      ({cat.count})
+                    </span>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-right tabular-nums text-muted-foreground text-xs">
+                    {formatCurrency(catMva)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {cat.count}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatCurrency(cat.total)}
+                    {formatCurrency(catEksMva)}
                   </TableCell>
                 </TableRow>
-                {expanded === cat.category &&
+                {isExpanded &&
                   cat.transactions.map((tx) => {
                     const mva = getMvaForTransaction(tx.amountNOK, tx.mvaCode);
                     return (
@@ -394,46 +265,116 @@ function KostnadsoversiktCard({ data }: { data: ArsoppgjorData }) {
                             <ExternalLink className="size-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </Link>
                         </TableCell>
-                        <TableCell className="text-right tabular-nums text-muted-foreground text-xs">
-                          {mva > 0 ? (
-                            <div>
-                              <div>MVA {formatCurrency(mva)}</div>
-                              <div className="text-muted-foreground/70">
-                                Eks. MVA {formatCurrency(getEksMvaForTransaction(tx.amountNOK, tx.mvaCode))}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-amber-500">Ingen MVA</span>
-                          )}
+                        <TableCell className="hidden sm:table-cell text-right tabular-nums text-muted-foreground text-xs">
+                          {mva > 0 ? formatCurrency(mva) : <span className="text-amber-500">0</span>}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums text-muted-foreground">
-                          {formatCurrency(tx.amountNOK)}
-                          {isAmountInklMva(tx.mvaCode) && (
-                            <div className="text-xs text-muted-foreground/70">inkl. MVA</div>
-                          )}
+                        <TableCell className="text-right tabular-nums text-muted-foreground text-xs">
+                          {formatCurrency(getEksMvaForTransaction(tx.amountNOK, tx.mvaCode))}
                         </TableCell>
                       </TableRow>
                     );
                   })}
               </>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
+            );
+          })}
+          {extraItems?.map((item) => (
+            <TableRow key={item.label}>
               <TableCell />
-              <TableCell className="font-medium">Totalt</TableCell>
-              <TableCell className="text-right font-medium tabular-nums">
-                {data.expensesByCategory.reduce(
-                  (sum, c) => sum + c.count,
-                  0
-                )}
+              <TableCell className="text-muted-foreground">
+                {item.label}
               </TableCell>
-              <TableCell className="text-right font-medium tabular-nums">
-                {formatCurrency(data.totalExpenses)}
+              <TableCell className="hidden sm:table-cell text-right tabular-nums text-muted-foreground text-xs">
+                &mdash;
+              </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {formatCurrency(item.amount)}
               </TableCell>
             </TableRow>
-          </TableFooter>
-        </Table>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell />
+            <TableCell className="font-medium">
+              Sum post {post} (eks. MVA)
+              <HelpTip text="Bel&oslash;pet du f&oslash;rer i skattemeldingen. MVA er trukket fra fordi du f&aring;r MVA-fradrag via MVA-meldingen." />
+            </TableCell>
+            <TableCell className="hidden sm:table-cell" />
+            <TableCell className="text-right font-medium tabular-nums">
+              <CopyableValue value={grandTotal} label={`Sum post ${post}`} />
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    </div>
+  );
+}
+
+function SkattemeldingGuideCard({ data, includeHjemmekontor }: { data: ArsoppgjorData; includeHjemmekontor: boolean }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const post6995Categories = data.expensesByCategory.filter((c) =>
+    getPostMapping(c.category).post === "6995"
+  );
+  const post7700Categories = data.expensesByCategory.filter((c) =>
+    getPostMapping(c.category).post === "7700"
+  );
+  const otherCategories = data.expensesByCategory.filter((c) => {
+    const p = getPostMapping(c.category).post;
+    return p !== "6995" && p !== "7700";
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hvor f&oslash;rer du hva i skattemeldingen?</CardTitle>
+        <CardDescription>
+          Alle bel&oslash;p er eks. MVA &mdash; dette er det du fyller inn i skattemeldingen.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        <PostTable
+          title="Kontorrekvisita, elektronisk kommunikasjon, porto"
+          post="6995"
+          categories={post6995Categories}
+          expanded={expanded}
+          setExpanded={setExpanded}
+        />
+        <PostTable
+          title="Andre kostnader"
+          post="7700"
+          categories={post7700Categories}
+          expanded={expanded}
+          setExpanded={setExpanded}
+          extraItems={includeHjemmekontor ? [
+            { label: `Hjemmekontor sjablong`, amount: data.hjemmekontorFradrag },
+          ] : undefined}
+        />
+        {otherCategories.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-amber-600">Ikke tildelt post</h3>
+            <Table>
+              <TableBody>
+                {otherCategories.map((cat) => (
+                  <TableRow key={cat.category}>
+                    <TableCell>
+                      {cat.category}
+                      <span className="ml-1.5 text-xs text-muted-foreground">
+                        ({cat.count})
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCurrency(cat.total)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <p className="text-xs text-amber-600">
+              Kategoriser disse transaksjonene for &aring; f&aring; riktig post.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -657,14 +598,9 @@ export function ArsoppgjorOverview({ data, year }: Props) {
         </CardContent>
       </Card>
 
-      {/* Kostnadsoversikt */}
-      {data.expensesByCategory.length > 0 && (
-        <KostnadsoversiktCard data={data} />
-      )}
-
       {/* Skattemelding-guide */}
       {data.expensesByCategory.length > 0 && (
-        <SkattemeldingGuideCard data={data} />
+        <SkattemeldingGuideCard data={data} includeHjemmekontor={includeHjemmekontor} />
       )}
 
       {/* MVA årsoversikt */}
