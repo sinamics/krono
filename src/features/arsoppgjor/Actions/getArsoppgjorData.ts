@@ -18,10 +18,20 @@ const EKOM_CATEGORIES = [
   "bredband",
 ];
 
+export type CategoryTransaction = {
+  id: string;
+  date: Date;
+  description: string;
+  amountNOK: number;
+  currency: string;
+  notes: string | null;
+};
+
 export type ExpenseCategory = {
   category: string;
   count: number;
   total: number;
+  transactions: CategoryTransaction[];
 };
 
 export type MvaTermSummary = {
@@ -74,7 +84,10 @@ export async function getArsoppgjorData(
   let totalSales = 0;
   let totalExpenses = 0;
   let ekomTotalCost = 0;
-  const categoryMap = new Map<string, { count: number; total: number }>();
+  const categoryMap = new Map<
+    string,
+    { count: number; total: number; transactions: CategoryTransaction[] }
+  >();
 
   for (const tx of transactions) {
     if (tx.type === "SALE") {
@@ -83,9 +96,21 @@ export async function getArsoppgjorData(
       totalExpenses += tx.amountNOK;
 
       const cat = tx.category || "Ukategorisert";
-      const entry = categoryMap.get(cat) ?? { count: 0, total: 0 };
+      const entry = categoryMap.get(cat) ?? {
+        count: 0,
+        total: 0,
+        transactions: [],
+      };
       entry.count += 1;
       entry.total += tx.amountNOK;
+      entry.transactions.push({
+        id: tx.id,
+        date: tx.date,
+        description: tx.description,
+        amountNOK: tx.amountNOK,
+        currency: tx.currency,
+        notes: tx.notes,
+      });
       categoryMap.set(cat, entry);
 
       if (
@@ -100,7 +125,14 @@ export async function getArsoppgjorData(
   const expensesByCategory: ExpenseCategory[] = Array.from(
     categoryMap.entries()
   )
-    .map(([category, { count, total }]) => ({ category, count, total }))
+    .map(([category, { count, total, transactions: txs }]) => ({
+      category,
+      count,
+      total,
+      transactions: txs.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      ),
+    }))
     .sort((a, b) => b.total - a.total);
 
   const ekomPrivateDeduction = Math.min(ekomTotalCost, EKOM_SJABLONG_YEARLY);

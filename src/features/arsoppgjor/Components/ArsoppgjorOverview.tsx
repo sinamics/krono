@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArsoppgjorData } from "@/features/arsoppgjor/Actions/getArsoppgjorData";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 import {
   Card,
   CardContent,
@@ -34,7 +34,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Info } from "lucide-react";
+import { Copy, Check, Info, ChevronRight } from "lucide-react";
 
 function CopyableValue({
   value,
@@ -93,6 +93,101 @@ function HelpTip({ text }: { text: string }) {
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+  );
+}
+
+function KostnadsoversiktCard({ data }: { data: ArsoppgjorData }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Kostnadsoversikt</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-8" />
+              <TableHead>Kategori</TableHead>
+              <TableHead className="text-right">Antall</TableHead>
+              <TableHead className="text-right">Bel&oslash;p</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.expensesByCategory.map((cat) => (
+              <>
+                <TableRow
+                  key={cat.category}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() =>
+                    setExpanded(
+                      expanded === cat.category ? null : cat.category
+                    )
+                  }
+                >
+                  <TableCell className="w-8 pr-0">
+                    <ChevronRight
+                      className={`size-4 text-muted-foreground transition-transform ${
+                        expanded === cat.category ? "rotate-90" : ""
+                      }`}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {cat.category}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {cat.count}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatCurrency(cat.total)}
+                  </TableCell>
+                </TableRow>
+                {expanded === cat.category &&
+                  cat.transactions.map((tx) => (
+                    <TableRow
+                      key={tx.id}
+                      className="bg-muted/30 text-sm"
+                    >
+                      <TableCell />
+                      <TableCell className="text-muted-foreground">
+                        <span className="font-mono text-xs">
+                          {formatDate(tx.date)}
+                        </span>
+                        <span className="ml-2">{tx.description}</span>
+                        {tx.notes && (
+                          <span className="ml-1 text-xs text-muted-foreground/70">
+                            ({tx.notes})
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell />
+                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                        {formatCurrency(tx.amountNOK)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell />
+              <TableCell className="font-medium">Totalt</TableCell>
+              <TableCell className="text-right font-medium tabular-nums">
+                {data.expensesByCategory.reduce(
+                  (sum, c) => sum + c.count,
+                  0
+                )}
+              </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">
+                {formatCurrency(data.totalExpenses)}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -190,7 +285,7 @@ export function ArsoppgjorOverview({ data, year }: Props) {
                   <CopyableValue value={data.ekomPrivateDeduction} label="EKOM privatandel" />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Konto <span className="font-mono font-medium">7098</span> &mdash; Privat bruk av elektronisk kommunikasjon
+                  Post <span className="font-mono font-medium">6998</span> &mdash; Privat bruk av elektronisk kommunikasjon
                 </p>
               </div>
               <div className="space-y-1">
@@ -279,47 +374,7 @@ export function ArsoppgjorOverview({ data, year }: Props) {
 
       {/* Kostnadsoversikt */}
       {data.expensesByCategory.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Kostnadsoversikt</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead className="text-right">Antall</TableHead>
-                  <TableHead className="text-right">Beløp</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.expensesByCategory.map((cat) => (
-                  <TableRow key={cat.category}>
-                    <TableCell>{cat.category}</TableCell>
-                    <TableCell className="text-right tabular-nums">{cat.count}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(cat.total)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell className="font-medium">Totalt</TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {data.expensesByCategory.reduce(
-                      (sum, c) => sum + c.count,
-                      0
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">
-                    {formatCurrency(data.totalExpenses)}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </CardContent>
-        </Card>
+        <KostnadsoversiktCard data={data} />
       )}
 
       {/* Skattemelding-guide */}
