@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
 import { formatTermLabel } from "@/lib/format";
+import { getMvaForTransaction } from "@/lib/tax-calculations";
 
 const HJEMMEKONTOR_SJABLONG: Record<number, number> = {
-  2024: 2090,
+  2024: 2128,
   2025: 2192,
   2026: 2240,
 };
@@ -87,6 +88,7 @@ export async function getArsoppgjorData(
   let totalSales = 0;
   let totalExpenses = 0;
   let ekomTotalCost = 0;
+  let ekomTotalMva = 0;
   const categoryMap = new Map<
     string,
     { count: number; total: number; transactions: CategoryTransaction[] }
@@ -122,6 +124,7 @@ export async function getArsoppgjorData(
         EKOM_CATEGORIES.includes(tx.category.toLowerCase())
       ) {
         ekomTotalCost += tx.amountNOK;
+        ekomTotalMva += getMvaForTransaction(tx.amountNOK, tx.mvaCode);
       }
     }
   }
@@ -140,7 +143,10 @@ export async function getArsoppgjorData(
     .sort((a, b) => b.total - a.total);
 
   const ekomPrivateDeduction = Math.min(ekomTotalCost, EKOM_SJABLONG_YEARLY);
-  const ekomMvaAdjustment = ekomPrivateDeduction * 0.2;
+  // MVA adjustment is proportional: if privatandel covers X% of total EKOM cost,
+  // then X% of the total EKOM MVA must be returned.
+  const ekomPrivateFraction = ekomTotalCost > 0 ? ekomPrivateDeduction / ekomTotalCost : 0;
+  const ekomMvaAdjustment = ekomTotalMva * ekomPrivateFraction;
 
   const hjemmekontorFradrag = HJEMMEKONTOR_SJABLONG[year] ?? HJEMMEKONTOR_DEFAULT;
 

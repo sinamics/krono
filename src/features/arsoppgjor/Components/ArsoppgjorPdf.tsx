@@ -6,26 +6,25 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { ArsoppgjorData } from "@/features/arsoppgjor/Actions/getArsoppgjorData";
+import {
+  getMvaForTransaction,
+  getEksMvaForTransaction,
+  isAmountInklMva,
+} from "@/lib/tax-calculations";
 
 const EKOM_KEYS = [
   "ekom", "internet", "internett", "telefon", "mobil",
   "bredbånd", "bredband", "telekommunikasjon", "telekom/internet",
 ];
 
-function getMvaAmount(amountNOK: number, mvaCode: string): number {
-  if (mvaCode === "CODE_1") return amountNOK * 0.2;
-  if (mvaCode === "CODE_86") return amountNOK * 0.25;
-  return 0;
-}
-
 function getMvaLabel(mvaCode: string): string {
   const labels: Record<string, string> = {
     CODE_52: "Kode 52",
     CODE_86: "Kode 86",
+    CODE_81: "Kode 81",
     CODE_1: "Kode 1",
     CODE_11: "Kode 11",
     CODE_13: "Kode 13",
-    CODE_81: "Kode 81",
   };
   return labels[mvaCode] ?? mvaCode;
 }
@@ -44,7 +43,7 @@ function getPostForCategory(category: string): string {
   };
   if (direct[category]) return direct[category];
   if (EKOM_KEYS.includes(category.toLowerCase())) return "6995";
-  return "—";
+  return "\u2014";
 }
 
 function fmtCur(n: number): string {
@@ -122,7 +121,6 @@ const s = StyleSheet.create({
   warn: {
     color: "#b45309",
   },
-  // Table styles
   table: {
     marginTop: 4,
   },
@@ -153,19 +151,17 @@ const s = StyleSheet.create({
     borderTopColor: "#333",
     marginTop: 2,
   },
-  // Column widths for cost overview
-  colDate: { width: "15%" },
-  colDesc: { width: "35%" },
-  colMvaCode: { width: "12%" },
+  colDate: { width: "12%" },
+  colDesc: { width: "28%" },
+  colMvaCode: { width: "10%" },
   colMva: { width: "13%", textAlign: "right" },
-  colAmount: { width: "15%", textAlign: "right" },
-  colPost: { width: "10%", textAlign: "right" },
-  // Category summary columns
+  colEksMva: { width: "15%", textAlign: "right" },
+  colAmount: { width: "13%", textAlign: "right" },
+  colLabel: { width: "9%", textAlign: "right" },
   catName: { width: "40%" },
   catPost: { width: "15%" },
   catCount: { width: "15%", textAlign: "right" },
   catAmount: { width: "30%", textAlign: "right" },
-  // MVA term columns
   mvaTermCol: { width: "25%" },
   mvaLabelCol: { width: "25%" },
   mvaAmountCol: { width: "25%", textAlign: "right" },
@@ -175,9 +171,10 @@ const s = StyleSheet.create({
 type Props = {
   data: ArsoppgjorData;
   year: number;
+  includeHjemmekontor: boolean;
 };
 
-export function ArsoppgjorPdf({ data, year }: Props) {
+export function ArsoppgjorPdf({ data, year, includeHjemmekontor }: Props) {
   const totalTransactions = data.expensesByCategory.reduce(
     (sum, c) => sum + c.count,
     0
@@ -187,25 +184,29 @@ export function ArsoppgjorPdf({ data, year }: Props) {
     .filter((c) => getPostForCategory(c.category) === "6995")
     .reduce((sum, c) => sum + c.total, 0);
 
+  const adjustedNaeringsresultat = includeHjemmekontor
+    ? data.naeringsresultat
+    : data.naeringsresultat + data.hjemmekontorFradrag;
+
   return (
     <Document>
       {/* Page 1: Summary */}
       <Page size="A4" style={s.page}>
         <View style={s.header}>
-          <Text style={s.title}>Årsoppgjør {year}</Text>
+          <Text style={s.title}>{"\u00C5"}rsoppgj{"\u00F8"}r {year}</Text>
           <Text style={s.subtitle}>
             {data.businessName ?? ""}
             {data.orgNr ? ` (Org.nr: ${data.orgNr})` : ""}
           </Text>
           <Text style={s.generatedAt}>
-            Generert {fmtDate(new Date())} — Dokumentet er ment som
+            Generert {fmtDate(new Date())} {"\u2014"} Dokumentet er ment som
             underlag ved kontroll.
           </Text>
         </View>
 
         {/* Næringsspesifikasjon */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>Næringsspesifikasjon</Text>
+          <Text style={s.sectionTitle}>N{"\u00E6"}ringsspesifikasjon</Text>
           <View style={s.row}>
             <Text>Sum driftsinntekter</Text>
             <Text>{fmtCur(data.totalSales)}</Text>
@@ -215,7 +216,7 @@ export function ArsoppgjorPdf({ data, year }: Props) {
             <Text>{fmtCur(data.totalExpenses)}</Text>
           </View>
           <View style={s.rowBorder}>
-            <Text style={s.bold}>Årsresultat</Text>
+            <Text style={s.bold}>{"\u00C5"}rsresultat</Text>
             <Text style={s.bold}>
               {fmtCur(data.totalSales - data.totalExpenses)}
             </Text>
@@ -226,16 +227,18 @@ export function ArsoppgjorPdf({ data, year }: Props) {
         <View style={s.section}>
           <Text style={s.sectionTitle}>Justeringer</Text>
           <View style={s.row}>
-            <Text>EKOM privatandel — Post 6998</Text>
+            <Text>EKOM privatandel {"\u2014"} Post 6998</Text>
             <Text>{fmtCur(data.ekomPrivateDeduction)}</Text>
           </View>
-          <View style={s.row}>
-            <Text>Hjemmekontor sjablong — Post 7700</Text>
-            <Text>{fmtCur(data.hjemmekontorFradrag)}</Text>
-          </View>
+          {includeHjemmekontor && (
+            <View style={s.row}>
+              <Text>Hjemmekontor sjablong {"\u2014"} Post 7700</Text>
+              <Text>{fmtCur(data.hjemmekontorFradrag)}</Text>
+            </View>
+          )}
           <View style={s.rowBorder}>
-            <Text style={s.bold}>Næringsinntekt = Personinntekt</Text>
-            <Text style={s.bold}>{fmtCur(data.naeringsresultat)}</Text>
+            <Text style={s.bold}>N{"\u00E6"}ringsinntekt = Personinntekt</Text>
+            <Text style={s.bold}>{fmtCur(adjustedNaeringsresultat)}</Text>
           </View>
         </View>
 
@@ -255,7 +258,7 @@ export function ArsoppgjorPdf({ data, year }: Props) {
             <Text style={s.bold}>{fmtCur(data.ekomPrivateDeduction)}</Text>
           </View>
           <View style={s.row}>
-            <Text style={s.warn}>MVA tilbakebetaling (20%)</Text>
+            <Text style={s.warn}>MVA tilbakebetaling</Text>
             <Text style={s.warn}>{fmtCur(data.ekomMvaAdjustment)}</Text>
           </View>
         </View>
@@ -268,7 +271,7 @@ export function ArsoppgjorPdf({ data, year }: Props) {
               <Text style={[s.catName, s.bold]}>Kategori</Text>
               <Text style={[s.catPost, s.bold]}>Post</Text>
               <Text style={[s.catCount, s.bold]}>Antall</Text>
-              <Text style={[s.catAmount, s.bold]}>Beløp</Text>
+              <Text style={[s.catAmount, s.bold]}>Bel{"\u00F8"}p</Text>
             </View>
             {data.expensesByCategory.map((cat) => (
               <View key={cat.category} style={s.tableRow}>
@@ -297,7 +300,7 @@ export function ArsoppgjorPdf({ data, year }: Props) {
 
         {/* MVA årsoversikt */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>MVA årsoversikt</Text>
+          <Text style={s.sectionTitle}>MVA {"\u00E5"}rsoversikt</Text>
           <View style={s.table}>
             <View style={s.tableHeader}>
               <Text style={[s.mvaTermCol, s.bold]}>Termin</Text>
@@ -333,7 +336,7 @@ export function ArsoppgjorPdf({ data, year }: Props) {
           <View style={s.header}>
             <Text style={s.title}>{cat.category}</Text>
             <Text style={s.subtitle}>
-              {cat.count} transaksjoner — {fmtCur(cat.total)} — Post{" "}
+              {cat.count} transaksjoner {"\u2014"} {fmtCur(cat.total)} {"\u2014"} Post{" "}
               {getPostForCategory(cat.category)}
             </Text>
           </View>
@@ -343,10 +346,14 @@ export function ArsoppgjorPdf({ data, year }: Props) {
               <Text style={[s.colDesc, s.bold]}>Beskrivelse</Text>
               <Text style={[s.colMvaCode, s.bold]}>MVA-kode</Text>
               <Text style={[s.colMva, s.bold]}>MVA</Text>
-              <Text style={[s.colAmount, s.bold]}>Beløp</Text>
+              <Text style={[s.colEksMva, s.bold]}>Eks. MVA</Text>
+              <Text style={[s.colAmount, s.bold]}>Bel{"\u00F8"}p</Text>
+              <Text style={[s.colLabel, s.bold]} />
             </View>
             {cat.transactions.map((tx, i) => {
-              const mva = getMvaAmount(tx.amountNOK, tx.mvaCode);
+              const mva = getMvaForTransaction(tx.amountNOK, tx.mvaCode);
+              const eksMva = getEksMvaForTransaction(tx.amountNOK, tx.mvaCode);
+              const inklMva = isAmountInklMva(tx.mvaCode);
               return (
                 <View
                   key={tx.id}
@@ -364,7 +371,11 @@ export function ArsoppgjorPdf({ data, year }: Props) {
                   <Text style={[s.colMva, mva === 0 ? s.warn : {}]}>
                     {mva > 0 ? fmtCur(mva) : "Ingen"}
                   </Text>
+                  <Text style={s.colEksMva}>{fmtCur(eksMva)}</Text>
                   <Text style={s.colAmount}>{fmtCur(tx.amountNOK)}</Text>
+                  <Text style={[s.colLabel, s.muted]}>
+                    {inklMva ? "inkl." : ""}
+                  </Text>
                 </View>
               );
             })}
@@ -375,7 +386,15 @@ export function ArsoppgjorPdf({ data, year }: Props) {
               <Text style={[s.colMva, s.bold]}>
                 {fmtCur(
                   cat.transactions.reduce(
-                    (sum, tx) => sum + getMvaAmount(tx.amountNOK, tx.mvaCode),
+                    (sum, tx) => sum + getMvaForTransaction(tx.amountNOK, tx.mvaCode),
+                    0
+                  )
+                )}
+              </Text>
+              <Text style={[s.colEksMva, s.bold]}>
+                {fmtCur(
+                  cat.transactions.reduce(
+                    (sum, tx) => sum + getEksMvaForTransaction(tx.amountNOK, tx.mvaCode),
                     0
                   )
                 )}
@@ -383,6 +402,7 @@ export function ArsoppgjorPdf({ data, year }: Props) {
               <Text style={[s.colAmount, s.bold]}>
                 {fmtCur(cat.total)}
               </Text>
+              <Text style={s.colLabel} />
             </View>
           </View>
         </Page>

@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import type { ArsoppgjorData } from "@/features/arsoppgjor/Actions/getArsoppgjorData";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
+  getMvaForTransaction,
+  getEksMvaForTransaction,
+  isAmountInklMva,
+} from "@/lib/tax-calculations";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -98,12 +103,6 @@ function HelpTip({ text }: { text: string }) {
   );
 }
 
-function getMvaAmount(amountNOK: number, mvaCode: string): number {
-  if (mvaCode === "CODE_1") return amountNOK * 0.2;
-  if (mvaCode === "CODE_86") return amountNOK * 0.25;
-  return 0;
-}
-
 const EKOM_KEYS = [
   "ekom", "internet", "internett", "telefon", "mobil",
   "bredbånd", "bredband", "telekommunikasjon", "telekom/internet",
@@ -168,6 +167,16 @@ function SkattemeldingGuideCard({ data }: { data: ArsoppgjorData }) {
 
   const post6995Total = post6995Categories.reduce(
     (sum, c) => sum + c.total,
+    0
+  );
+
+  const post6995EksMva = post6995Categories.reduce(
+    (sum, c) =>
+      sum +
+      c.transactions.reduce(
+        (s, tx) => s + getEksMvaForTransaction(tx.amountNOK, tx.mvaCode),
+        0
+      ),
     0
   );
 
@@ -237,7 +246,7 @@ function SkattemeldingGuideCard({ data }: { data: ArsoppgjorData }) {
                   </TableRow>
                   {isExpanded &&
                     cat.transactions.map((tx) => {
-                      const mva = getMvaAmount(tx.amountNOK, tx.mvaCode);
+                      const mva = getMvaForTransaction(tx.amountNOK, tx.mvaCode);
                       return (
                         <TableRow
                           key={tx.id}
@@ -265,10 +274,22 @@ function SkattemeldingGuideCard({ data }: { data: ArsoppgjorData }) {
                             </Link>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-right tabular-nums text-muted-foreground text-xs">
-                            {mva > 0 ? `MVA ${formatCurrency(mva)}` : <span className="text-amber-500">Ingen MVA</span>}
+                            {mva > 0 ? (
+                              <div>
+                                <div>MVA {formatCurrency(mva)}</div>
+                                <div className="text-muted-foreground/70">
+                                  Eks. MVA {formatCurrency(getEksMvaForTransaction(tx.amountNOK, tx.mvaCode))}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-amber-500">Ingen MVA</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right tabular-nums text-muted-foreground">
                             {formatCurrency(tx.amountNOK)}
+                            {isAmountInklMva(tx.mvaCode) && (
+                              <div className="text-xs text-muted-foreground/70">inkl. MVA</div>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -280,13 +301,16 @@ function SkattemeldingGuideCard({ data }: { data: ArsoppgjorData }) {
           <TableFooter>
             <TableRow>
               <TableCell />
-              <TableCell className="font-medium">Sum post 6995</TableCell>
+              <TableCell className="font-medium">
+                Sum post 6995 (eks. MVA)
+                <HelpTip text="Dette er bel&oslash;pet du f&oslash;rer i post 6995 i skattemeldingen. MVA er trukket fra fordi du allerede f&aring;r MVA-fradrag via MVA-meldingen." />
+              </TableCell>
               <TableCell>
                 <span className="font-mono text-xs">6995</span>
               </TableCell>
               <TableCell className="hidden sm:table-cell" />
               <TableCell className="text-right font-medium tabular-nums">
-                <CopyableValue value={post6995Total} label="Sum post 6995" />
+                <CopyableValue value={post6995EksMva} label="Sum post 6995" />
               </TableCell>
             </TableRow>
           </TableFooter>
@@ -345,7 +369,7 @@ function KostnadsoversiktCard({ data }: { data: ArsoppgjorData }) {
                 </TableRow>
                 {expanded === cat.category &&
                   cat.transactions.map((tx) => {
-                    const mva = getMvaAmount(tx.amountNOK, tx.mvaCode);
+                    const mva = getMvaForTransaction(tx.amountNOK, tx.mvaCode);
                     return (
                       <TableRow
                         key={tx.id}
@@ -370,10 +394,22 @@ function KostnadsoversiktCard({ data }: { data: ArsoppgjorData }) {
                           </Link>
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-muted-foreground text-xs">
-                          {mva > 0 ? `MVA ${formatCurrency(mva)}` : <span className="text-amber-500">Ingen MVA</span>}
+                          {mva > 0 ? (
+                            <div>
+                              <div>MVA {formatCurrency(mva)}</div>
+                              <div className="text-muted-foreground/70">
+                                Eks. MVA {formatCurrency(getEksMvaForTransaction(tx.amountNOK, tx.mvaCode))}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-amber-500">Ingen MVA</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-muted-foreground">
                           {formatCurrency(tx.amountNOK)}
+                          {isAmountInklMva(tx.mvaCode) && (
+                            <div className="text-xs text-muted-foreground/70">inkl. MVA</div>
+                          )}
                         </TableCell>
                       </TableRow>
                     );
@@ -425,7 +461,9 @@ export function ArsoppgjorOverview({ data, year }: Props) {
         import("@react-pdf/renderer"),
         import("./ArsoppgjorPdf"),
       ]);
-      const blob = await pdf(<ArsoppgjorPdf data={data} year={year} />).toBlob();
+      const blob = await pdf(
+        <ArsoppgjorPdf data={data} year={year} includeHjemmekontor={includeHjemmekontor} />
+      ).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
