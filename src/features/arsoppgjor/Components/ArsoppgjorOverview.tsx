@@ -322,6 +322,174 @@ export function ArsoppgjorOverview({ data, year }: Props) {
         </Card>
       )}
 
+      {/* Skattemelding-guide */}
+      {data.expensesByCategory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Hvor f&oslash;rer du hva i skattemeldingen?</CardTitle>
+            <CardDescription>
+              Kategoriene fra kostnadsoversikten din fordelt p&aring; riktig post i
+              skattemeldingen for n&aelig;ringsdrivende (ENK).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Post</TableHead>
+                  <TableHead>Felt i skattemeldingen</TableHead>
+                  <TableHead className="text-right">Ditt bel&oslash;p</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(() => {
+                  const postMapping: Record<
+                    string,
+                    { post: string; felt: string; note?: string }
+                  > = {
+                    Internet: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                    },
+                    Telefon: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                    },
+                    Hosting: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                    },
+                    Abonnement: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                    },
+                    Kontor: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                    },
+                    Programvare: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                    },
+                    Regnskap: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                    },
+                    Reise: {
+                      post: "7080",
+                      felt: "Reisekostnad",
+                    },
+                    Forsikring: {
+                      post: "7500",
+                      felt: "Forsikringspremie",
+                    },
+                    Markedsføring: {
+                      post: "7330",
+                      felt: "Salgs- og reklamekostnader",
+                    },
+                    Utstyr: {
+                      post: "6995",
+                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+                      note: "Gjelder utstyr under 15 000 kr. Dyrere utstyr avskrives.",
+                    },
+                    Mat: {
+                      post: "—",
+                      felt: "Vanligvis ikke fradragsberettiget",
+                      note: "Kun representasjon med forretningsforbindelser.",
+                    },
+                    Annet: {
+                      post: "—",
+                      felt: "Vurder individuelt",
+                      note: "Sjekk hva kostnaden gjelder og plasser i riktig post.",
+                    },
+                    Ukategorisert: {
+                      post: "—",
+                      felt: "Kategoriser f\u00f8rst",
+                      note: "Gi disse en kategori for \u00e5 f\u00e5 riktig post.",
+                    },
+                  };
+
+                  // Group categories by post
+                  const post6995Categories = data.expensesByCategory.filter(
+                    (c) => postMapping[c.category]?.post === "6995"
+                  );
+                  const otherCategories = data.expensesByCategory.filter(
+                    (c) => postMapping[c.category]?.post !== "6995"
+                  );
+                  const sorted = [...post6995Categories, ...otherCategories];
+
+                  let lastPost = "";
+                  return sorted.map((cat) => {
+                    const mapping = postMapping[cat.category] ?? {
+                      post: "—",
+                      felt: "Ukjent kategori",
+                    };
+                    const showPostDivider = mapping.post !== lastPost;
+                    lastPost = mapping.post;
+                    return (
+                      <TableRow
+                        key={cat.category}
+                        className={showPostDivider ? "border-t-2" : ""}
+                      >
+                        <TableCell>
+                          <span>{cat.category}</span>
+                          {mapping.note && (
+                            <HelpTip text={mapping.note} />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-xs">{mapping.post}</span>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
+                          {mapping.felt}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatCurrency(cat.total)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+                })()}
+              </TableBody>
+              <TableFooter>
+                {(() => {
+                  const postMapping: Record<string, string> = {
+                    Internet: "6995",
+                    Telefon: "6995",
+                    Hosting: "6995",
+                    Abonnement: "6995",
+                    Kontor: "6995",
+                    Programvare: "6995",
+                    Regnskap: "6995",
+                    Utstyr: "6995",
+                    Reise: "7080",
+                    Forsikring: "7500",
+                    "Markedsf\u00f8ring": "7330",
+                  };
+                  const post6995Total = data.expensesByCategory
+                    .filter((c) => postMapping[c.category] === "6995")
+                    .reduce((sum, c) => sum + c.total, 0);
+
+                  return (
+                    <TableRow>
+                      <TableCell className="font-medium">Sum post 6995</TableCell>
+                      <TableCell>
+                        <span className="font-mono text-xs">6995</span>
+                      </TableCell>
+                      <TableCell />
+                      <TableCell className="text-right font-medium tabular-nums">
+                        <CopyableValue value={post6995Total} label="Sum post 6995" />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })()}
+              </TableFooter>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       {/* MVA årsoversikt */}
       <Card>
         <CardHeader>
