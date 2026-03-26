@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ArsoppgjorData } from "@/features/arsoppgjor/Actions/getArsoppgjorData";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -34,7 +35,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check, Info, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Copy, Check, Info, ChevronRight, ExternalLink, Download, Loader2 } from "lucide-react";
 
 function CopyableValue({
   value,
@@ -96,6 +98,204 @@ function HelpTip({ text }: { text: string }) {
   );
 }
 
+function getMvaAmount(amountNOK: number, mvaCode: string): number {
+  if (mvaCode === "CODE_1") return amountNOK * 0.2;
+  if (mvaCode === "CODE_86") return amountNOK * 0.25;
+  return 0;
+}
+
+const EKOM_KEYS = [
+  "ekom", "internet", "internett", "telefon", "mobil",
+  "bredbånd", "bredband", "telekommunikasjon", "telekom/internet",
+];
+
+const STATIC_POST_MAPPING: Record<
+  string,
+  { post: string; felt: string; note?: string }
+> = {
+  Hosting: { post: "6995", felt: "Kontorrekvisita, elektronisk kommunikasjon, porto" },
+  Abonnement: { post: "6995", felt: "Kontorrekvisita, elektronisk kommunikasjon, porto" },
+  Kontor: { post: "6995", felt: "Kontorrekvisita, elektronisk kommunikasjon, porto" },
+  Programvare: { post: "6995", felt: "Kontorrekvisita, elektronisk kommunikasjon, porto" },
+  Regnskap: { post: "6995", felt: "Kontorrekvisita, elektronisk kommunikasjon, porto" },
+  Reise: { post: "7080", felt: "Reisekostnad" },
+  Forsikring: { post: "7500", felt: "Forsikringspremie" },
+  Markedsføring: { post: "7330", felt: "Salgs- og reklamekostnader" },
+  Utstyr: {
+    post: "6995",
+    felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
+    note: "Gjelder utstyr under 15 000 kr. Dyrere utstyr avskrives.",
+  },
+  Mat: {
+    post: "\u2014",
+    felt: "Vanligvis ikke fradragsberettiget",
+    note: "Kun representasjon med forretningsforbindelser.",
+  },
+  Annet: {
+    post: "\u2014",
+    felt: "Vurder individuelt",
+    note: "Sjekk hva kostnaden gjelder og plasser i riktig post.",
+  },
+  Ukategorisert: {
+    post: "\u2014",
+    felt: "Kategoriser f\u00f8rst",
+    note: "Gi disse en kategori for \u00e5 f\u00e5 riktig post.",
+  },
+};
+
+function getPostMapping(category: string) {
+  if (STATIC_POST_MAPPING[category]) return STATIC_POST_MAPPING[category];
+  if (EKOM_KEYS.includes(category.toLowerCase())) {
+    return { post: "6995", felt: "Kontorrekvisita, elektronisk kommunikasjon, porto" };
+  }
+  return { post: "\u2014", felt: "Ukjent kategori \u2013 kategoriser p\u00e5 nytt" };
+}
+
+function is6995(category: string) {
+  return getPostMapping(category).post === "6995";
+}
+
+function SkattemeldingGuideCard({ data }: { data: ArsoppgjorData }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const post6995Categories = data.expensesByCategory.filter((c) =>
+    is6995(c.category)
+  );
+  const otherCategories = data.expensesByCategory.filter(
+    (c) => !is6995(c.category)
+  );
+  const sorted = [...post6995Categories, ...otherCategories];
+
+  const post6995Total = post6995Categories.reduce(
+    (sum, c) => sum + c.total,
+    0
+  );
+
+  let lastPost = "";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hvor f&oslash;rer du hva i skattemeldingen?</CardTitle>
+        <CardDescription>
+          Kategoriene fra kostnadsoversikten din fordelt p&aring; riktig post i
+          skattemeldingen for n&aelig;ringsdrivende (ENK).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-8" />
+              <TableHead>Kategori</TableHead>
+              <TableHead>Post</TableHead>
+              <TableHead className="hidden sm:table-cell">
+                Felt i skattemeldingen
+              </TableHead>
+              <TableHead className="text-right">Bel&oslash;p</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((cat) => {
+              const mapping = getPostMapping(cat.category);
+              const showPostDivider = mapping.post !== lastPost;
+              lastPost = mapping.post;
+              const isExpanded = expanded === cat.category;
+              return (
+                <>
+                  <TableRow
+                    key={cat.category}
+                    className={`cursor-pointer hover:bg-muted/50 ${
+                      showPostDivider ? "border-t-2" : ""
+                    }`}
+                    onClick={() =>
+                      setExpanded(isExpanded ? null : cat.category)
+                    }
+                  >
+                    <TableCell className="w-8 pr-0">
+                      <ChevronRight
+                        className={`size-4 text-muted-foreground transition-transform ${
+                          isExpanded ? "rotate-90" : ""
+                        }`}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <span>{cat.category}</span>
+                      {mapping.note && <HelpTip text={mapping.note} />}
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-mono text-xs">
+                        {mapping.post}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs hidden sm:table-cell">
+                      {mapping.felt}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCurrency(cat.total)}
+                    </TableCell>
+                  </TableRow>
+                  {isExpanded &&
+                    cat.transactions.map((tx) => {
+                      const mva = getMvaAmount(tx.amountNOK, tx.mvaCode);
+                      return (
+                        <TableRow
+                          key={tx.id}
+                          className="bg-muted/30 text-sm group"
+                        >
+                          <TableCell />
+                          <TableCell
+                            colSpan={2}
+                            className="text-muted-foreground"
+                          >
+                            <Link
+                              href={`/transactions/${tx.id}`}
+                              className="flex items-center gap-1 hover:text-foreground transition-colors"
+                            >
+                              <span className="font-mono text-xs">
+                                {formatDate(tx.date)}
+                              </span>
+                              <span className="ml-1">{tx.description}</span>
+                              {tx.notes && (
+                                <span className="text-xs text-muted-foreground/70">
+                                  ({tx.notes})
+                                </span>
+                              )}
+                              <ExternalLink className="size-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </Link>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell text-right tabular-nums text-muted-foreground text-xs">
+                            {mva > 0 ? `MVA ${formatCurrency(mva)}` : <span className="text-amber-500">Ingen MVA</span>}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-muted-foreground">
+                            {formatCurrency(tx.amountNOK)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </>
+              );
+            })}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell />
+              <TableCell className="font-medium">Sum post 6995</TableCell>
+              <TableCell>
+                <span className="font-mono text-xs">6995</span>
+              </TableCell>
+              <TableCell className="hidden sm:table-cell" />
+              <TableCell className="text-right font-medium tabular-nums">
+                <CopyableValue value={post6995Total} label="Sum post 6995" />
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
 function KostnadsoversiktCard({ data }: { data: ArsoppgjorData }) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -144,29 +344,40 @@ function KostnadsoversiktCard({ data }: { data: ArsoppgjorData }) {
                   </TableCell>
                 </TableRow>
                 {expanded === cat.category &&
-                  cat.transactions.map((tx) => (
-                    <TableRow
-                      key={tx.id}
-                      className="bg-muted/30 text-sm"
-                    >
-                      <TableCell />
-                      <TableCell className="text-muted-foreground">
-                        <span className="font-mono text-xs">
-                          {formatDate(tx.date)}
-                        </span>
-                        <span className="ml-2">{tx.description}</span>
-                        {tx.notes && (
-                          <span className="ml-1 text-xs text-muted-foreground/70">
-                            ({tx.notes})
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell />
-                      <TableCell className="text-right tabular-nums text-muted-foreground">
-                        {formatCurrency(tx.amountNOK)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  cat.transactions.map((tx) => {
+                    const mva = getMvaAmount(tx.amountNOK, tx.mvaCode);
+                    return (
+                      <TableRow
+                        key={tx.id}
+                        className="bg-muted/30 text-sm group"
+                      >
+                        <TableCell />
+                        <TableCell className="text-muted-foreground">
+                          <Link
+                            href={`/transactions/${tx.id}`}
+                            className="flex items-center gap-1 hover:text-foreground transition-colors"
+                          >
+                            <span className="font-mono text-xs">
+                              {formatDate(tx.date)}
+                            </span>
+                            <span className="ml-1">{tx.description}</span>
+                            {tx.notes && (
+                              <span className="text-xs text-muted-foreground/70">
+                                ({tx.notes})
+                              </span>
+                            )}
+                            <ExternalLink className="size-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-muted-foreground text-xs">
+                          {mva > 0 ? `MVA ${formatCurrency(mva)}` : <span className="text-amber-500">Ingen MVA</span>}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-muted-foreground">
+                          {formatCurrency(tx.amountNOK)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </>
             ))}
           </TableBody>
@@ -201,10 +412,30 @@ export function ArsoppgjorOverview({ data, year }: Props) {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const [includeHjemmekontor, setIncludeHjemmekontor] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const adjustedNaeringsresultat = includeHjemmekontor
     ? data.naeringsresultat
     : data.naeringsresultat + data.hjemmekontorFradrag;
+
+  async function handleExportPdf() {
+    setExporting(true);
+    try {
+      const [{ pdf }, { ArsoppgjorPdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./ArsoppgjorPdf"),
+      ]);
+      const blob = await pdf(<ArsoppgjorPdf data={data} year={year} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `arsoppgjor-${year}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -220,21 +451,36 @@ export function ArsoppgjorOverview({ data, year }: Props) {
             {data.orgNr ? ` (${data.orgNr})` : ""}
           </p>
         </div>
-        <Select
-          value={year.toString()}
-          onValueChange={(v) => router.push(`/arsoppgjor?year=${v}`)}
-        >
-          <SelectTrigger className="w-[100px]" size="sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((y) => (
-              <SelectItem key={y} value={y.toString()}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="size-4 animate-spin mr-1.5" />
+            ) : (
+              <Download className="size-4 mr-1.5" />
+            )}
+            Eksporter PDF
+          </Button>
+          <Select
+            value={year.toString()}
+            onValueChange={(v) => router.push(`/arsoppgjor?year=${v}`)}
+          >
+            <SelectTrigger className="w-[100px]" size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={y.toString()}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Næringsspesifikasjon */}
@@ -379,170 +625,7 @@ export function ArsoppgjorOverview({ data, year }: Props) {
 
       {/* Skattemelding-guide */}
       {data.expensesByCategory.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Hvor f&oslash;rer du hva i skattemeldingen?</CardTitle>
-            <CardDescription>
-              Kategoriene fra kostnadsoversikten din fordelt p&aring; riktig post i
-              skattemeldingen for n&aelig;ringsdrivende (ENK).
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Post</TableHead>
-                  <TableHead>Felt i skattemeldingen</TableHead>
-                  <TableHead className="text-right">Ditt bel&oslash;p</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(() => {
-                  const postMapping: Record<
-                    string,
-                    { post: string; felt: string; note?: string }
-                  > = {
-                    Internet: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                    },
-                    Telefon: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                    },
-                    Hosting: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                    },
-                    Abonnement: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                    },
-                    Kontor: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                    },
-                    Programvare: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                    },
-                    Regnskap: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                    },
-                    Reise: {
-                      post: "7080",
-                      felt: "Reisekostnad",
-                    },
-                    Forsikring: {
-                      post: "7500",
-                      felt: "Forsikringspremie",
-                    },
-                    Markedsføring: {
-                      post: "7330",
-                      felt: "Salgs- og reklamekostnader",
-                    },
-                    Utstyr: {
-                      post: "6995",
-                      felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
-                      note: "Gjelder utstyr under 15 000 kr. Dyrere utstyr avskrives.",
-                    },
-                    Mat: {
-                      post: "—",
-                      felt: "Vanligvis ikke fradragsberettiget",
-                      note: "Kun representasjon med forretningsforbindelser.",
-                    },
-                    Annet: {
-                      post: "—",
-                      felt: "Vurder individuelt",
-                      note: "Sjekk hva kostnaden gjelder og plasser i riktig post.",
-                    },
-                    Ukategorisert: {
-                      post: "—",
-                      felt: "Kategoriser f\u00f8rst",
-                      note: "Gi disse en kategori for \u00e5 f\u00e5 riktig post.",
-                    },
-                  };
-
-                  // Group categories by post
-                  const post6995Categories = data.expensesByCategory.filter(
-                    (c) => postMapping[c.category]?.post === "6995"
-                  );
-                  const otherCategories = data.expensesByCategory.filter(
-                    (c) => postMapping[c.category]?.post !== "6995"
-                  );
-                  const sorted = [...post6995Categories, ...otherCategories];
-
-                  let lastPost = "";
-                  return sorted.map((cat) => {
-                    const mapping = postMapping[cat.category] ?? {
-                      post: "—",
-                      felt: "Ukjent kategori",
-                    };
-                    const showPostDivider = mapping.post !== lastPost;
-                    lastPost = mapping.post;
-                    return (
-                      <TableRow
-                        key={cat.category}
-                        className={showPostDivider ? "border-t-2" : ""}
-                      >
-                        <TableCell>
-                          <span>{cat.category}</span>
-                          {mapping.note && (
-                            <HelpTip text={mapping.note} />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-mono text-xs">{mapping.post}</span>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          {mapping.felt}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {formatCurrency(cat.total)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  });
-                })()}
-              </TableBody>
-              <TableFooter>
-                {(() => {
-                  const postMapping: Record<string, string> = {
-                    Internet: "6995",
-                    Telefon: "6995",
-                    Hosting: "6995",
-                    Abonnement: "6995",
-                    Kontor: "6995",
-                    Programvare: "6995",
-                    Regnskap: "6995",
-                    Utstyr: "6995",
-                    Reise: "7080",
-                    Forsikring: "7500",
-                    "Markedsf\u00f8ring": "7330",
-                  };
-                  const post6995Total = data.expensesByCategory
-                    .filter((c) => postMapping[c.category] === "6995")
-                    .reduce((sum, c) => sum + c.total, 0);
-
-                  return (
-                    <TableRow>
-                      <TableCell className="font-medium">Sum post 6995</TableCell>
-                      <TableCell>
-                        <span className="font-mono text-xs">6995</span>
-                      </TableCell>
-                      <TableCell />
-                      <TableCell className="text-right font-medium tabular-nums">
-                        <CopyableValue value={post6995Total} label="Sum post 6995" />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })()}
-              </TableFooter>
-            </Table>
-          </CardContent>
-        </Card>
+        <SkattemeldingGuideCard data={data} />
       )}
 
       {/* MVA årsoversikt */}

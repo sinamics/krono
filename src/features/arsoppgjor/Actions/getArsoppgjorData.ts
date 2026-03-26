@@ -16,6 +16,8 @@ const EKOM_CATEGORIES = [
   "mobil",
   "bredbånd",
   "bredband",
+  "telekommunikasjon",
+  "telekom/internet",
 ];
 
 export type CategoryTransaction = {
@@ -24,6 +26,7 @@ export type CategoryTransaction = {
   description: string;
   amountNOK: number;
   currency: string;
+  mvaCode: string;
   notes: string | null;
 };
 
@@ -109,6 +112,7 @@ export async function getArsoppgjorData(
         description: tx.description,
         amountNOK: tx.amountNOK,
         currency: tx.currency,
+        mvaCode: tx.mvaCode,
         notes: tx.notes,
       });
       categoryMap.set(cat, entry);
