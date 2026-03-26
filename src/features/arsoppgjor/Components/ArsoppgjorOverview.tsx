@@ -120,7 +120,7 @@ const STATIC_POST_MAPPING: Record<
   Reise: { post: "7080", felt: "Reisekostnad" },
   Forsikring: { post: "7500", felt: "Forsikringspremie" },
   Markedsføring: { post: "7330", felt: "Salgs- og reklamekostnader" },
-  Betalingsgebyr: { post: "7770", felt: "Bank- og finanskostnader" },
+  Betalingsgebyr: { post: "7700", felt: "Andre kostnader" },
   Utstyr: {
     post: "6995",
     felt: "Kontorrekvisita, elektronisk kommunikasjon, porto",
@@ -594,7 +594,7 @@ export function ArsoppgjorOverview({ data, year }: Props) {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Post <span className="font-mono font-medium">7700</span> &mdash; Kostnad lokaler
+                  Post <span className="font-mono font-medium">7700</span> &mdash; Andre kostnader
                 </p>
               </div>
             </div>
